@@ -131,6 +131,12 @@ def creatTracker(tracker_type):
 
     return tracker
 
+def rect2bbox(rect):
+    assert len(rect) == 4
+    x,y,w,h = rect
+    assert w > 0
+    assert h > 0
+    return (long(x), long(y), long(w), long(h))
 
 if __name__ == '__main__':
     if len(sys.argv) == 1:
@@ -166,7 +172,7 @@ if __name__ == '__main__':
     test_overlapRegion()
     test_getIoU()
 
-    rects = cascade.detectMultiScale(frame, scaleFactor=1.1, minNeighbors=1, minSize=(1, 1))
+    rects = cascade.detectMultiScale(frame, scaleFactor=1.1, minNeighbors=1, minSize=(30, 30))
 
     tracker_types = ['BOOSTING', 'MIL', 'KCF', 'TLD', 'MEDIANFLOW', 'GOTURN']
     tracker_type = tracker_types[2]
@@ -183,7 +189,7 @@ if __name__ == '__main__':
             break
 
 
-        rects = cascade.detectMultiScale(frame, scaleFactor=1.1, minNeighbors=1, minSize=(1, 1))
+        rects = cascade.detectMultiScale(frame, scaleFactor=1.1, minNeighbors=1, minSize=(30, 30))
 
         alreadyFounds = len(rects)*[0.0]
 
@@ -200,7 +206,14 @@ if __name__ == '__main__':
                 IoU = getIoU(bbox, rect)
                 assert IoU >= 0.0
                 assert IoU < 1.0
+                assert len(rect) == 4
+                assert rect[2] > 0
+                assert rect[3] > 0
                 alreadyFounds[j] = max(alreadyFounds[j], IoU)
+                if alreadyFounds[j] > 0.5:
+                    print rect2bbox(rect)
+                    ok = tracker.init(frame, rect2bbox(rect))
+                                        
 
         print rects, alreadyFounds
 
@@ -211,13 +224,11 @@ if __name__ == '__main__':
                 cv2.rectangle(frame, (x,y), (x+w, y+h), (0, 0, 255), 2, 1)
 
 
-#        for i, alreadyFound in enumerate(alreadyFounds):
-#            if not alreadyFound:
-#                tracker = creatTracker(tracker_type)
-#                print rects[i]
-#                x,y,w,h = rects[i]
-#                ok = tracker.init(frame, (long(x), long(y), long(w), long(h)))
-#                trackers.append(tracker)
+        for j, alreadyFound in enumerate(alreadyFounds):
+            if alreadyFound < 0.5:
+                tracker = creatTracker(tracker_type)
+                ok = tracker.init(frame, rect2bbox(rects[j]))
+                trackers.append(tracker)
 
         cv2.putText(frame, tracker_type + " Tracker", (100, 20), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (50, 170, 50), 2);
 
