@@ -32,6 +32,26 @@ if __name__ == '__main__':
 
     cascade = cv2.CascadeClassifier(cascade_path)
 
+#    video = cv2.VideoCapture("videos/chaplin.mp4")
+    video = cv2.VideoCapture(0)
+
+
+    if not video.isOpened():
+        print "Could not open video"
+        sys.exit()
+
+    ok, frame = video.read()
+    if not ok:
+        print 'Cannot read video file'
+        sys.exit()
+
+    rects = cascade.detectMultiScale(frame, scaleFactor=1.1, minNeighbors=1, minSize=(1, 1))
+    largest = largestRect(rects)
+    print largest
+
+    bbox = tuple(largest)
+
+
     tracker_types = ['BOOSTING', 'MIL', 'KCF', 'TLD', 'MEDIANFLOW', 'GOTURN']
     tracker_type = tracker_types[2]
 
@@ -51,24 +71,6 @@ if __name__ == '__main__':
         if tracker_type == 'GOTURN':
             tracker = cv2.TrackerGOTURN_create()
 
-#    video = cv2.VideoCapture("videos/chaplin.mp4")
-    video = cv2.VideoCapture(0)
-
-
-    if not video.isOpened():
-        print "Could not open video"
-        sys.exit()
-
-    ok, frame = video.read()
-    if not ok:
-        print 'Cannot read video file'
-        sys.exit()
-
-    rects = cascade.detectMultiScale(frame, scaleFactor=1.1, minNeighbors=1, minSize=(1, 1))
-    largest = largestRect(rects)
-    print largest
-
-    bbox = tuple(largest)
 
     ok = tracker.init(frame, bbox)
 
