@@ -20,45 +20,71 @@ def largestRect(rects):
 
     return largest
 
+def overlapRange(lim1, lim2):
+    start = max(lim1[0],  lim2[0])
+    stop = min(lim1[1], lim2[1])
+
+    if start > stop:
+        return [None, None]
+    else:
+        return [start, stop]
+
+def overlapRectArea(rect1, rect2):
+    """return overlapped area
+    rect1:
+    rect2:
+    """
+
+    left1, right1 = rect1[0], rect1[0]+rect1[2]
+    top1, bottom1 = rect1[1], rect1[1]+rect1[3]
+
+
+    left2, right2 = rect2[0], rect2[0]+rect2[2]
+    top2, bottom2 = rect2[1], rect2[1]+rect2[3]
+
+    [left3, right3] = overlapRange([left1, right1], [left2, right2])
+    [top3, bottom3] = overlapRange([top1, bottom1], [top2, bottom2])
+
+    if (not left3) or (not right3) or (not top3) or (not bottom3):
+#            return []
+        return 0
+    else:
+        return (right3-left3)*(bottom3-top3)
+        
+def test_overlapRegion():
+    lim = overlapRange([0, 10], [0, 10])
+    assert lim == [0, 10]
+    lim = overlapRange([0, 10], [0, 20])
+    assert lim == [0, 10]
+    lim = overlapRange([0, 10], [-10, 20])
+    assert lim == [0, 10]
+
+
+    lim = overlapRange([0, 10], [5, 10])
+    assert lim == [5, 10]
+
+    lim = overlapRange([0, 10], [5, 20])
+    assert lim == [5, 10]
+
+    lim = overlapRange([-10, 10], [5, 20])
+    assert lim == [5, 10]
+
+
+    lim = overlapRange([5, 10], [5, 20])
+    assert lim == [5, 10]
+
 
 def getIoU(rect1, rect2):
     u"""
     return intersection  over union
 """
-    def overlapRange(lim1, lim2):
-        start = max(lim1[0],  lim2[0])
-        stop = min(lim1[1], lim2[0])
-
-        if start > stop:
-            return [None, None]
-        else:
-            return [start, stop]
-
-    def overlapRectArea(rect1, rect2):
-        """return overlapped area
-        rect1:
-        rect2:
-        """
-
-        left1, right1 = rect1[0], rect1[0]+rect1[2]
-        top1, bottom1 = rect1[1], rect1[1]+rect1[3]
 
 
-        left2, right2 = rect2[0], rect2[0]+rect2[2]
-        top2, bottom2 = rect2[1], rect2[1]+rect2[3]
-
-        [left3, right3] = overlapRange([left1, right1], [left2, right2])
-        [top3, bottom3] = overlapRange([top1, bottom1], [top2, bottom2])
-
-        if (not left3) or (not right3) or (not top3) or (not bottom3):
-#            return []
-            return 0
-        else:
-            return (right3-left3)*(bottom3-top3)
 
     area1 = rect1[2]*rect1[3]
     area2 = rect2[2]*rect2[3]
     intersection = overlapRectArea(rect1, rect2)
+    assert intersection >= 0
     union = area1+area2 - intersection
 
     IoU = intersection/float(union)
@@ -121,6 +147,11 @@ if __name__ == '__main__':
         print 'Cannot read video file'
         sys.exit()
 
+    frame = cv2.flip(frame, 1)
+
+    test_overlapRegion()
+
+
     rects = cascade.detectMultiScale(frame, scaleFactor=1.1, minNeighbors=1, minSize=(1, 1))
 
     tracker_types = ['BOOSTING', 'MIL', 'KCF', 'TLD', 'MEDIANFLOW', 'GOTURN']
@@ -136,6 +167,8 @@ if __name__ == '__main__':
         ok, frame = video.read()
         if not ok:
             break
+
+        frame = cv2.flip(frame, 1)
 
         rects = cascade.detectMultiScale(frame, scaleFactor=1.1, minNeighbors=1, minSize=(1, 1))
 
