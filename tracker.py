@@ -45,11 +45,12 @@ def overlapRectArea(rect1, rect2):
     [left3, right3] = overlapRange([left1, right1], [left2, right2])
     [top3, bottom3] = overlapRange([top1, bottom1], [top2, bottom2])
 
-    if (not left3) or (not right3) or (not top3) or (not bottom3):
-#            return []
-        return 0
+    if None in (left3, top3, right3, bottom3):
+        return 0.0
     else:
-        return (right3-left3)*(bottom3-top3)
+        area = (right3-left3)*(bottom3-top3)
+        area >= 0.0
+        return area
         
 def test_overlapRegion():
     lim = overlapRange([0, 10], [0, 10])
@@ -79,18 +80,32 @@ def getIoU(rect1, rect2):
     return intersection  over union
 """
 
-
-
     area1 = rect1[2]*rect1[3]
     area2 = rect2[2]*rect2[3]
     intersection = overlapRectArea(rect1, rect2)
     assert intersection >= 0
     union = area1+area2 - intersection
+    assert union >= 0
 
     IoU = intersection/float(union)
+    assert IoU >= 0
     return IoU
+    
 
+def test_getIoU():
+    IoU = getIoU([10, 20, 30, 40], [10, 20, 30, 40])
+    print IoU
+    assert IoU == 1.0
+    
+    IoU = getIoU([10, 20, 30, 40], [10, 20, 30, 20])
+    print IoU
+    assert IoU <=0.5+0.01
+    assert 0.5 - 0.01 <= IoU
 
+    IoU = getIoU([10, 20, 30, 40], [10, 25, 30, 40])
+    print IoU
+    assert IoU < 1.0
+    assert 0.0 <=IoU
 
 
 def creatTracker(tracker_type):
@@ -147,10 +162,9 @@ if __name__ == '__main__':
         print 'Cannot read video file'
         sys.exit()
 
-    frame = cv2.flip(frame, 1)
 
     test_overlapRegion()
-
+    test_getIoU()
 
     rects = cascade.detectMultiScale(frame, scaleFactor=1.1, minNeighbors=1, minSize=(1, 1))
 
@@ -168,11 +182,10 @@ if __name__ == '__main__':
         if not ok:
             break
 
-        frame = cv2.flip(frame, 1)
 
         rects = cascade.detectMultiScale(frame, scaleFactor=1.1, minNeighbors=1, minSize=(1, 1))
 
-        alreadyFounds = len(rects)*[False]
+        alreadyFounds = len(rects)*[0.0]
 
         for i, tracker in enumerate(trackers):
             ok, bbox = tracker.update(frame)
@@ -183,18 +196,28 @@ if __name__ == '__main__':
             else:
                 cv2.putText(frame, "Tracking failure detected", (100, 80), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0, 0, 255), 2)
 
+            for j, rect in enumerate(rects):
                 IoU = getIoU(bbox, rect)
-                if IoU > 0.5:
-                    alreadyFounds[i] = True
+                assert IoU >= 0.0
+                assert IoU < 1.0
+                alreadyFounds[j] = max(alreadyFounds[j], IoU)
 
-        for i in alreadyFounds:
-            if not alreadyFounds[i]:
-                if rects[i]:
-                    tracker = creatTracker(tracker_type)
-                    print rects[i]
-                    x,y,w,h = rects[i]
-                    ok = tracker.init(frame, (long(x), long(y), long(w), long(h)))
-                    trackers.append(tracker)
+        print rects, alreadyFounds
+
+        for j, alreadyFound in enumerate(alreadyFounds):
+            if alreadyFound < 0.5:
+                print rects[j]
+                x,y,w,h = rects[j]
+                cv2.rectangle(frame, (x,y), (x+w, y+h), (0, 0, 255), 2, 1)
+
+
+#        for i, alreadyFound in enumerate(alreadyFounds):
+#            if not alreadyFound:
+#                tracker = creatTracker(tracker_type)
+#                print rects[i]
+#                x,y,w,h = rects[i]
+#                ok = tracker.init(frame, (long(x), long(y), long(w), long(h)))
+#                trackers.append(tracker)
 
         cv2.putText(frame, tracker_type + " Tracker", (100, 20), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (50, 170, 50), 2);
 
