@@ -1,9 +1,6 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 # pylint: disable=C0103
-"""
-https://www.learnopencv.com/object-tracking-using-opencv-cpp-python/
-"""
 import sys
 import os
 import cv2
@@ -22,16 +19,84 @@ def largestRect(rects):
             largest = rects[i]
 
     return largest
-    
-    
+
+
 def getIoU(rect1, rect2):
     u"""
     return intersection  over union
 """
-    
-    
+    def overlapRange(lim1, lim2):
+        start = max(lim1[0],  lim2[0])
+        stop = min(lim1[1], lim2[0])
+
+        if start > stop:
+            return [None, None]
+        else:
+            return [start, stop]
+
+    def overlapRectArea(rect1, rect2):
+        """return overlapped area
+        rect1:
+        rect2:
+        """
+
+        left1, right1 = rect1[0], rect1[0]+rect1[2]
+        top1, bottom1 = rect1[1], rect1[1]+rect1[3]
+
+
+        left2, right2 = rect2[0], rect2[0]+rect2[2]
+        top2, bottom2 = rect2[1], rect2[1]+rect2[3]
+
+        [left3, right3] = overlapRange([left1, right1], [left2, right2])
+        [top3, bottom3] = overlapRange([top1, bottom1], [top2, bottom2])
+
+        if (not left3) or (not right3) or (not top3) or (not bottom3):
+#            return []
+            return 0
+        else:
+            return (right3-left3)*(bottom3-top3)
+
+    area1 = rect1[2]*rect1[3]
+    area2 = rect2[2]*rect2[3]
+    intersection = overlapRectArea(rect1, rect2)
+    union = area1+area2 - intersection
+
+    IoU = intersection/float(union)
+    return IoU
+
+
+
+
+def creatTracker(tracker_type):
+    u"""
+    create Tracker
+    """
+
+    if int(minor_ver) < 3:
+        tracker = cv2.Tracker_create(tracker_type)
+    else:
+        if tracker_type == 'BOOSTING':
+            tracker = cv2.TrackerBoosting_create()
+        if tracker_type == 'MIL':
+            tracker = cv2.TrackerMIL_create()
+        if tracker_type == 'KCF':
+            tracker = cv2.TrackerKCF_create()
+        if tracker_type == 'TLD':
+            tracker = cv2.TrackerTLD_create()
+        if tracker_type == 'MEDIANFLOW':
+            tracker = cv2.TrackerMedianFlow_create()
+        if tracker_type == 'GOTURN':
+            tracker = cv2.TrackerGOTURN_create()
+
+    return tracker
+
 
 if __name__ == '__main__':
+    if len(sys.argv) == 1:
+        print """usage:tracker [moviefile | uvcID]
+        """
+        sys.exit()
+
     (major_ver, minor_ver, subminor_ver) = (cv2.__version__).split(".")
     cascade_path = "haarcascade_frontalface_alt.xml"
     if not os.path.isfile(cascade_path):
@@ -40,9 +105,12 @@ if __name__ == '__main__':
 
     cascade = cv2.CascadeClassifier(cascade_path)
 
-#    video = cv2.VideoCapture("videos/chaplin.mp4")
-    video = cv2.VideoCapture(0)
-
+    try:
+        num = int(sys.argv[1])
+        video = cv2.VideoCapture(num)
+    except:
+        video = cv2.VideoCapture(sys.argv[1])
+#    video = cv2.VideoCapture(0)
 
     if not video.isOpened():
         print "Could not open video"
@@ -54,42 +122,25 @@ if __name__ == '__main__':
         sys.exit()
 
     rects = cascade.detectMultiScale(frame, scaleFactor=1.1, minNeighbors=1, minSize=(1, 1))
-    largest = largestRect(rects)
-    print largest
-
-
 
     tracker_types = ['BOOSTING', 'MIL', 'KCF', 'TLD', 'MEDIANFLOW', 'GOTURN']
     tracker_type = tracker_types[2]
 
-
     trackers = range(len(rects))
 
     for i, rect in enumerate(rects):
-
-        if int(minor_ver) < 3:
-            trackers[i] = cv2.Tracker_create(tracker_type)
-        else:
-            if tracker_type == 'BOOSTING':
-                trackers[i] = cv2.TrackerBoosting_create()
-            if tracker_type == 'MIL':
-                trackers[i] = cv2.TrackerMIL_create()
-            if tracker_type == 'KCF':
-                trackers[i] = cv2.TrackerKCF_create()
-            if tracker_type == 'TLD':
-                trackers[i] = cv2.TrackerTLD_create()
-            if tracker_type == 'MEDIANFLOW':
-                trackers[i] = cv2.TrackerMedianFlow_create()
-            if tracker_type == 'GOTURN':
-                trackers[i] = cv2.TrackerGOTURN_create()
-
+        trackers[i] = creatTracker(tracker_type)
         ok = trackers[i].init(frame, tuple(rects[i]))
 
     while True:
         ok, frame = video.read()
         if not ok:
             break
-        
+
+        rects = cascade.detectMultiScale(frame, scaleFactor=1.1, minNeighbors=1, minSize=(1, 1))
+
+        alreadyFounds = len(rects)*[False]
+
         for i, tracker in enumerate(trackers):
             ok, bbox = tracker.update(frame)
             if ok:            # Tracking success
@@ -98,6 +149,19 @@ if __name__ == '__main__':
                 cv2.rectangle(frame, p1, p2, (255, 0, 0), 2, 1)
             else:
                 cv2.putText(frame, "Tracking failure detected", (100, 80), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0, 0, 255), 2)
+
+                IoU = getIoU(bbox, rect)
+                if IoU > 0.5:
+                    alreadyFounds[i] = True
+
+        for i in alreadyFounds:
+            if not alreadyFounds[i]:
+                if rects[i]:
+                    tracker = creatTracker(tracker_type)
+                    print rects[i]
+                    x,y,w,h = rects[i]
+                    ok = tracker.init(frame, (long(x), long(y), long(w), long(h)))
+                    trackers.append(tracker)
 
         cv2.putText(frame, tracker_type + " Tracker", (100, 20), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (50, 170, 50), 2);
 
