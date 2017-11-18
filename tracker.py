@@ -22,6 +22,14 @@ def largestRect(rects):
             largest = rects[i]
 
     return largest
+    
+    
+def getIoU(rect1, rect2):
+    u"""
+    return intersection  over union
+"""
+    
+    
 
 if __name__ == '__main__':
     (major_ver, minor_ver, subminor_ver) = (cv2.__version__).split(".")
@@ -81,13 +89,9 @@ if __name__ == '__main__':
         ok, frame = video.read()
         if not ok:
             break
-
-
+        
         for i, tracker in enumerate(trackers):
-
             ok, bbox = tracker.update(frame)
-
-
             if ok:            # Tracking success
                 p1 = (int(bbox[0]), int(bbox[1]))
                 p2 = (int(bbox[0] + bbox[2]), int(bbox[1] + bbox[3]))
