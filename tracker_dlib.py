@@ -162,7 +162,6 @@ def dets2rects(dets):
 
 if __name__ == '__main__':
 
-    detector = dlib.get_frontal_face_detector()
 
     if len(sys.argv) == 1:
         print """usage:tracker [moviefile | uvcID]
@@ -170,10 +169,6 @@ if __name__ == '__main__':
         sys.exit()
 
     (major_ver, minor_ver, subminor_ver) = (cv2.__version__).split(".")
-    cascade_path = "haarcascade_frontalface_alt.xml"
-    if not os.path.isfile(cascade_path):
-        print "be sure to get ready for %s" % os.path.basename(cascade_path)
-        sys.exit()
 
     try:
         num = int(sys.argv[1])
@@ -194,6 +189,7 @@ if __name__ == '__main__':
     test_overlapRegion()
     test_getIoU()
 
+    detector = dlib.get_frontal_face_detector()
     rects = dets2rects(detector(frame, 1))
 
     tracker_types = ['BOOSTING', 'MIL', 'KCF', 'TLD', 'MEDIANFLOW', 'GOTURN']
@@ -207,60 +203,64 @@ if __name__ == '__main__':
 
     counter = 0
 
-    interval = 5
+    interval = 10
 
+
+    color = {True:(0, 0, 255), False:(255, 0, 0)}
     while True:
         ok, frame = video.read()
         if not ok:
             break
 
         doDetect = (counter % interval == interval - 1)
+#        doDetect = False        
+        
+        for i, tracker in enumerate(trackers):
+            ok, bbox = tracker.update(frame)
+            if ok:            # Tracking success
+                p1 = (int(bbox[0]), int(bbox[1]))
+                p2 = (int(bbox[0] + bbox[2]), int(bbox[1] + bbox[3]))
+                cv2.rectangle(frame, p1, p2, color[doDetect] , 2, 1)
+                if doDetect:
+                    cv2.putText(frame, "detect  frame", (100, 80), cv2.FONT_HERSHEY_SIMPLEX, 0.75, color[doDetect] , 2)
+                else:
+                    cv2.putText(frame, "no detect  frame", (100, 80), cv2.FONT_HERSHEY_SIMPLEX, 0.75, color[doDetect] , 2)
+            else:
+                cv2.putText(frame, "Tracking failure detected", (100, 80), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0, 0, 255), 2)
+
 
         if doDetect:
             rects = dets2rects(detector(frame, 1))
 
             alreadyFounds = len(rects)*[0.0]
 
-        for i, tracker in enumerate(trackers):
-            ok, bbox = tracker.update(frame)
-            if ok:            # Tracking success
-                p1 = (int(bbox[0]), int(bbox[1]))
-                p2 = (int(bbox[0] + bbox[2]), int(bbox[1] + bbox[3]))
-                cv2.rectangle(frame, p1, p2, (255, 0, 0), 2, 1)
-            else:
-                cv2.putText(frame, "Tracking failure detected", (100, 80), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0, 0, 255), 2)
-
-
-            if doDetect:
-
-                for j, rect in enumerate(rects):
-                    IoU = getIoU(bbox, rect)
-                    assert IoU >= 0.0
+            for j, rect in enumerate(rects):
+                IoU = getIoU(bbox, rect)
+                assert IoU >= 0.0
 #                    assert IoU < 1.0
-                    assert len(rect) == 4
-                    assert rect[2] > 0
-                    assert rect[3] > 0
-                    alreadyFounds[j] = max(alreadyFounds[j], IoU)
-                    if alreadyFounds[j] > 0.5:
-                        print rect2bbox(rect), "# rect2bbox(rect)"
-                        ok = tracker.init(frame, rect2bbox(rect))
+                assert len(rect) == 4
+                assert rect[2] > 0
+                assert rect[3] > 0
+                alreadyFounds[j] = max(alreadyFounds[j], IoU)
+                if alreadyFounds[j] > 0.5:
+                    print rect2bbox(rect), "# rect2bbox(rect)"
+                    ok = tracker.init(frame, rect2bbox(rect))
 
-
-                print rects, alreadyFounds, "# rects, alreadyFounds"
-        if doDetect:
+            print rects, alreadyFounds, "# rects, alreadyFounds"
 
             for j, alreadyFound in enumerate(alreadyFounds):
                 if alreadyFound < 0.5:
                     print rects[j]
                     x, y, w, h = rects[j]
-                    cv2.rectangle(frame, (x, y), (x+w, y+h), (0, 0, 255), 2, 1)
+                    cv2.rectangle(frame, (x, y), (x+w, y+h), color[doDetect], 2, 1)
 
 
-            for j, alreadyFound in enumerate(alreadyFounds):
-                if alreadyFound < 0.5:
-                    tracker = creatTracker(tracker_type)
-                    ok = tracker.init(frame, rect2bbox(rects[j]))
-                    trackers.append(tracker)
+#        if doDetect:
+#            for j, alreadyFound in enumerate(alreadyFounds):
+#                if alreadyFound < 0.5:
+#                    tracker = creatTracker(tracker_type)
+#                    ok = tracker.init(frame, rect2bbox(rects[j]))
+#                    trackers.append(tracker)
 
         cv2.putText(frame, tracker_type + " Tracker", (100, 20), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (50, 170, 50), 2);
 
