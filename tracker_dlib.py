@@ -203,7 +203,7 @@ if __name__ == '__main__':
 
     counter = 0
 
-    interval = 10
+    interval = 20
 
 
     color = {True:(0, 0, 255), False:(255, 0, 0)}
@@ -255,12 +255,12 @@ if __name__ == '__main__':
                     cv2.rectangle(frame, (x, y), (x+w, y+h), color[doDetect], 2, 1)
 
 
-#        if doDetect:
-#            for j, alreadyFound in enumerate(alreadyFounds):
-#                if alreadyFound < 0.5:
-#                    tracker = creatTracker(tracker_type)
-#                    ok = tracker.init(frame, rect2bbox(rects[j]))
-#                    trackers.append(tracker)
+        if doDetect:
+            for j, alreadyFound in enumerate(alreadyFounds):
+                if alreadyFound < 0.5:
+                    tracker = creatTracker(tracker_type)
+                    ok = tracker.init(frame, rect2bbox(rects[j]))
+                    trackers.append(tracker)
 
         cv2.putText(frame, tracker_type + " Tracker", (100, 20), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (50, 170, 50), 2);
 
