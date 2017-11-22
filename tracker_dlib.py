@@ -254,10 +254,6 @@ if __name__ == '__main__':
                     x, y, w, h = rects[j]
                     cv2.rectangle(frame, (x, y), (x+w, y+h), color[doDetect], 2, 1)
 
-
-        if doDetect:
-            for j, alreadyFound in enumerate(alreadyFounds):
-                if alreadyFound < 0.5:
                     tracker = creatTracker(tracker_type)
                     ok = tracker.init(frame, rect2bbox(rects[j]))
                     trackers.append(tracker)
