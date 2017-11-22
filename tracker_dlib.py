@@ -154,11 +154,8 @@ def dets2rects(dets):
     convert dets type to rect type.
 """
 
-    rects2 = []
-    for d in dets:
-        rects2.append([d.left(), d.top(), d.right()-d.left(), d.bottom()-d.top()])
-
-    return rects2
+    rects = [[d.left(), d.top(), d.right()-d.left(), d.bottom()-d.top()] for d in dets]
+    return rects
 
 if __name__ == '__main__':
 
@@ -213,7 +210,6 @@ if __name__ == '__main__':
             break
 
         doDetect = (counter % interval == interval - 1)
-#        doDetect = False        
         
         for i, tracker in enumerate(trackers):
             ok, bbox = tracker.update(frame)
