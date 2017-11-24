@@ -182,30 +182,34 @@ def getBestIoU(rects, states):
 
 
 def draw_landmarks(frame, shape):
+    """
+    frame: image
+    shape: landmark points by dlib.shape_predictor(predictor_path)
+    """
     for shape_point_count in range(shape.num_parts):
         shape_point = shape.part(shape_point_count)
         if shape_point_count < 17: # [0-16]:輪郭
-            cv2.circle(frame, (int(shape_point.x ), int(shape_point.y )), 2, (0, 0, 255), -1)
+            cv2.circle(frame, (int(shape_point.x), int(shape_point.y)), 2, (0, 0, 255), -1)
         elif shape_point_count < 22: # [17-21]眉（右）
-            cv2.circle(frame, (int(shape_point.x ), int(shape_point.y )), 2, (0, 255, 0), -1)
+            cv2.circle(frame, (int(shape_point.x), int(shape_point.y)), 2, (0, 255, 0), -1)
         elif shape_point_count < 27: # [22-26]眉（左）
-            cv2.circle(frame, (int(shape_point.x ), int(shape_point.y )), 2, (255, 0, 0), -1)
+            cv2.circle(frame, (int(shape_point.x), int(shape_point.y)), 2, (255, 0, 0), -1)
         elif shape_point_count < 31: # [27-30]鼻背
-            cv2.circle(frame, (int(shape_point.x ), int(shape_point.y )), 2, (0, 255, 255), -1)
+            cv2.circle(frame, (int(shape_point.x), int(shape_point.y)), 2, (0, 255, 255), -1)
         elif shape_point_count < 36: # [31-35]鼻翼、鼻尖
-            cv2.circle(frame, (int(shape_point.x ), int(shape_point.y )), 2, (255, 255, 0), -1)
+            cv2.circle(frame, (int(shape_point.x), int(shape_point.y)), 2, (255, 255, 0), -1)
         elif shape_point_count < 42: # [36-4142目47）
-            cv2.circle(frame, (int(shape_point.x ), int(shape_point.y )), 2, (255, 0, 255), -1)
+            cv2.circle(frame, (int(shape_point.x), int(shape_point.y)), 2, (255, 0, 255), -1)
         elif shape_point_count < 48: # [42-47]目（左）
-            cv2.circle(frame, (int(shape_point.x ), int(shape_point.y )), 2, (0, 0, 128), -1)
+            cv2.circle(frame, (int(shape_point.x), int(shape_point.y)), 2, (0, 0, 128), -1)
         elif shape_point_count < 55: # [48-54]上唇（上側輪郭）
-            cv2.circle(frame, (int(shape_point.x ), int(shape_point.y )), 2, (0, 128, 0), -1)
+            cv2.circle(frame, (int(shape_point.x), int(shape_point.y)), 2, (0, 128, 0), -1)
         elif shape_point_count < 60: # [54-59]下唇（下側輪郭）
-            cv2.circle(frame, (int(shape_point.x ), int(shape_point.y )), 2, (128, 0, 0), -1)
+            cv2.circle(frame, (int(shape_point.x), int(shape_point.y)), 2, (128, 0, 0), -1)
         elif shape_point_count < 65: # [60-64]上唇（下側輪郭）
-            cv2.circle(frame, (int(shape_point.x ), int(shape_point.y )), 2, (0, 128, 255), -1)
+            cv2.circle(frame, (int(shape_point.x), int(shape_point.y)), 2, (0, 128, 255), -1)
         elif shape_point_count < 68: # [65-67]下唇（上側輪郭）
-            cv2.circle(frame, (int(shape_point.x ), int(shape_point.y )), 2, (128, 255, 0), -1)
+            cv2.circle(frame, (int(shape_point.x), int(shape_point.y)), 2, (128, 255, 0), -1)
     return frame
 
 if __name__ == '__main__':
@@ -272,6 +276,13 @@ if __name__ == '__main__':
                 p1 = (int(bbox[0]), int(bbox[1]))
                 p2 = (int(bbox[0] + bbox[2]), int(bbox[1] + bbox[3]))
                 cv2.rectangle(frame, p1, p2, color[doDetect], 2, 1)
+                
+                left, top, w, h = bbox
+                right, bottom = left+w, top+h
+                det = dlib.rectangle(long(left), long(top), long(right), long(bottom))
+                shape = predictor(frame, det)
+                frame = draw_landmarks(frame, shape)
+
                 if doDetect:
                     cv2.putText(frame, "detect  frame", (100, 80), cv2.FONT_HERSHEY_SIMPLEX, 0.75, color[doDetect], 2)
                 else:
