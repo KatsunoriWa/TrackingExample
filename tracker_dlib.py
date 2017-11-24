@@ -162,9 +162,9 @@ def getBestIoU(rects, states):
     u"""find best matched tracking for each rect.
     rects: detected rects
     states: tracking states
-    
+
     """
-    
+
     asTrack = len(rects)*[None]
     alreadyFounds = len(rects)*[0.0]
 
@@ -179,6 +179,34 @@ def getBestIoU(rects, states):
                 alreadyFounds[j] = max(alreadyFounds[j], IoU)
                 asTrack[j] = k
     return alreadyFounds, asTrack
+
+
+def draw_landmarks(frame, shape):
+    for shape_point_count in range(shape.num_parts):
+        shape_point = shape.part(shape_point_count)
+        if shape_point_count < 17: # [0-16]:輪郭
+            cv2.circle(frame, (int(shape_point.x ), int(shape_point.y )), 2, (0, 0, 255), -1)
+        elif shape_point_count < 22: # [17-21]眉（右）
+            cv2.circle(frame, (int(shape_point.x ), int(shape_point.y )), 2, (0, 255, 0), -1)
+        elif shape_point_count < 27: # [22-26]眉（左）
+            cv2.circle(frame, (int(shape_point.x ), int(shape_point.y )), 2, (255, 0, 0), -1)
+        elif shape_point_count < 31: # [27-30]鼻背
+            cv2.circle(frame, (int(shape_point.x ), int(shape_point.y )), 2, (0, 255, 255), -1)
+        elif shape_point_count < 36: # [31-35]鼻翼、鼻尖
+            cv2.circle(frame, (int(shape_point.x ), int(shape_point.y )), 2, (255, 255, 0), -1)
+        elif shape_point_count < 42: # [36-4142目47）
+            cv2.circle(frame, (int(shape_point.x ), int(shape_point.y )), 2, (255, 0, 255), -1)
+        elif shape_point_count < 48: # [42-47]目（左）
+            cv2.circle(frame, (int(shape_point.x ), int(shape_point.y )), 2, (0, 0, 128), -1)
+        elif shape_point_count < 55: # [48-54]上唇（上側輪郭）
+            cv2.circle(frame, (int(shape_point.x ), int(shape_point.y )), 2, (0, 128, 0), -1)
+        elif shape_point_count < 60: # [54-59]下唇（下側輪郭）
+            cv2.circle(frame, (int(shape_point.x ), int(shape_point.y )), 2, (128, 0, 0), -1)
+        elif shape_point_count < 65: # [60-64]上唇（下側輪郭）
+            cv2.circle(frame, (int(shape_point.x ), int(shape_point.y )), 2, (0, 128, 255), -1)
+        elif shape_point_count < 68: # [65-67]下唇（上側輪郭）
+            cv2.circle(frame, (int(shape_point.x ), int(shape_point.y )), 2, (128, 255, 0), -1)
+    return frame
 
 if __name__ == '__main__':
     if len(sys.argv) == 1:
@@ -207,6 +235,10 @@ if __name__ == '__main__':
     test_getIoU()
 
     detector = dlib.get_frontal_face_detector()
+
+    predictor_path = "./shape_predictor_68_face_landmarks.dat"
+    predictor = dlib.shape_predictor(predictor_path)
+
     rects = dets2rects(detector(frame, 1))
 
     tracker_types = ['BOOSTING', 'MIL', 'KCF', 'TLD', 'MEDIANFLOW', 'GOTURN']
@@ -262,11 +294,20 @@ if __name__ == '__main__':
                 if alreadyFounds[j] > 0.5:
                     print rect2bbox(rect), "# rect2bbox(rect)"
                     ok = trackers[asTrack[j]].init(frame, rect2bbox(rect))
+                    left, top, w, h = rect
+                    right, bottom = left+w, top+h
+                    det = dlib.rectangle(left, top, right, bottom)
+                    shape = predictor(frame, det)
+                    frame = draw_landmarks(frame, shape)
                 elif alreadyFounds[j] < 0.5 - 0.1:
                     tracker = creatTracker(tracker_type)
                     ok = tracker.init(frame, rect2bbox(rects[j]))
                     trackers.append(tracker)
                     print "new tracking"
+                    left, top, w, h = rects[j]
+                    right, bottom = left+w, top+h
+                    det = dlib.rectangle(left, top, right, bottom)
+                    shape = predictor(frame, det)
                 else:
                     continue
 
