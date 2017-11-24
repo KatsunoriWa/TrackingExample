@@ -26,7 +26,7 @@ def overlapRange(lim1, lim2):
     lim1:
     lim2:
     """
-    
+
     start = max(lim1[0], lim2[0])
     stop = min(lim1[1], lim2[1])
 
@@ -157,9 +157,30 @@ def dets2rects(dets):
     rects = [[d.left(), d.top(), d.right()-d.left(), d.bottom()-d.top()] for d in dets]
     return rects
 
+
+def getBestIoU(rects, states):
+    u"""find best matched tracking for each rect.
+    rects: detected rects
+    states: tracking states
+    
+    """
+    
+    asTrack = len(rects)*[None]
+    alreadyFounds = len(rects)*[0.0]
+
+    for j, rect in enumerate(rects):# 検出について
+        for k, (_, bbox) in  enumerate(states):#追跡について
+            IoU = getIoU(bbox, rect)
+            assert IoU >= 0.0
+            assert len(rect) == 4
+            assert rect[2] > 0
+            assert rect[3] > 0
+            if IoU > alreadyFounds[j]:
+                alreadyFounds[j] = max(alreadyFounds[j], IoU)
+                asTrack[j] = k
+    return alreadyFounds, asTrack
+
 if __name__ == '__main__':
-
-
     if len(sys.argv) == 1:
         print """usage:tracker [moviefile | uvcID]
         """
@@ -181,7 +202,6 @@ if __name__ == '__main__':
     if not ok:
         print 'Cannot read video file'
         sys.exit()
-
 
     test_overlapRegion()
     test_getIoU()
@@ -210,17 +230,20 @@ if __name__ == '__main__':
             break
 
         doDetect = (counter % interval == interval - 1)
-        
+
+        states = []
         for i, tracker in enumerate(trackers):
-            ok, bbox = tracker.update(frame)
+            #  追跡する。
+            trackOk, bbox = tracker.update(frame)
+            states.append((trackOk, bbox))
             if ok:            # Tracking success
                 p1 = (int(bbox[0]), int(bbox[1]))
                 p2 = (int(bbox[0] + bbox[2]), int(bbox[1] + bbox[3]))
-                cv2.rectangle(frame, p1, p2, color[doDetect] , 2, 1)
+                cv2.rectangle(frame, p1, p2, color[doDetect], 2, 1)
                 if doDetect:
-                    cv2.putText(frame, "detect  frame", (100, 80), cv2.FONT_HERSHEY_SIMPLEX, 0.75, color[doDetect] , 2)
+                    cv2.putText(frame, "detect  frame", (100, 80), cv2.FONT_HERSHEY_SIMPLEX, 0.75, color[doDetect], 2)
                 else:
-                    cv2.putText(frame, "no detect  frame", (100, 80), cv2.FONT_HERSHEY_SIMPLEX, 0.75, color[doDetect] , 2)
+                    cv2.putText(frame, "no detect  frame", (100, 80), cv2.FONT_HERSHEY_SIMPLEX, 0.75, color[doDetect], 2)
             else:
                 cv2.putText(frame, "Tracking failure detected", (100, 80), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0, 0, 255), 2)
 
@@ -228,38 +251,32 @@ if __name__ == '__main__':
         if doDetect:
             rects = dets2rects(detector(frame, 1))
 
-            alreadyFounds = len(rects)*[0.0]
+            # どれかの検出に重なっているかを調べる。
+            # 一番重なりがよいのを見つける。
+            # 一番重なりがよいものが、しきい値以上のＩｏＵだったら、追跡の位置を初期化する。
+            # 一番の重なりのよいものが一定値未満だったら、新規の追跡を開始する。
 
-            for j, rect in enumerate(rects):
-                IoU = getIoU(bbox, rect)
-                assert IoU >= 0.0
-#                    assert IoU < 1.0
-                assert len(rect) == 4
-                assert rect[2] > 0
-                assert rect[3] > 0
-                alreadyFounds[j] = max(alreadyFounds[j], IoU)
+            alreadyFounds, asTrack = getBestIoU(rects, states)
+
+            for j, rect in enumerate(rects):# 検出について
                 if alreadyFounds[j] > 0.5:
                     print rect2bbox(rect), "# rect2bbox(rect)"
-                    ok = tracker.init(frame, rect2bbox(rect))
-
-            print rects, alreadyFounds, "# rects, alreadyFounds"
-
-            for j, alreadyFound in enumerate(alreadyFounds):
-                if alreadyFound < 0.5:
-                    print rects[j]
-                    x, y, w, h = rects[j]
-                    cv2.rectangle(frame, (x, y), (x+w, y+h), color[doDetect], 2, 1)
-
+                    ok = trackers[asTrack[j]].init(frame, rect2bbox(rect))
+                elif alreadyFounds[j] < 0.5 - 0.1:
                     tracker = creatTracker(tracker_type)
                     ok = tracker.init(frame, rect2bbox(rects[j]))
                     trackers.append(tracker)
+                    print "new tracking"
+                else:
+                    continue
 
         cv2.putText(frame, tracker_type + " Tracker", (100, 20), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (50, 170, 50), 2);
+
+        cv2.putText(frame, "# of Trackers = %d" % len(trackers), (100, 400), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (50, 170, 50), 2);
 
 
         cv2.imshow("Tracking q:quit", frame)
         counter += 1
-        # Exit if ESC pressed
         k = cv2.waitKey(1) & 0xff
         if k == ord('q'):
             break
