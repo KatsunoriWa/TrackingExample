@@ -182,8 +182,8 @@ def getBestIoU(rects, states):
 
 if __name__ == '__main__':
     if len(sys.argv) == 1:
-        print """usage:tracker [moviefile | uvcID]
-        """
+        print """usage:%s [moviefile | uvcID]
+        """ % sys.argv[0]
         sys.exit()
 
     (major_ver, minor_ver, subminor_ver) = (cv2.__version__).split(".")
