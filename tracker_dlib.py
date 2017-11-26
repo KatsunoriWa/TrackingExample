@@ -3,6 +3,7 @@
 # pylint: disable=C0103
 import sys
 import os
+import numpy as np
 import cv2
 import dlib
 
@@ -282,6 +283,13 @@ if __name__ == '__main__':
                 det = dlib.rectangle(long(left), long(top), long(right), long(bottom))
                 shape = predictor(frame, det)
                 frame = draw_landmarks(frame, shape)
+
+                if False:
+                    faceimage = dlib.get_face_chip(frame, shape, size=320)
+                    cv_rgb_image = np.array(faceimage).astype(np.uint8)
+                    cv_bgr_img = cv2.cvtColor(cv_rgb_image, cv2.COLOR_RGB2BGR)
+                    cv2.imshow('image',cv_bgr_img)
+                    cv2.waitKey(0)
 
                 if doDetect:
                     cv2.putText(frame, "detect  frame", (100, 80), cv2.FONT_HERSHEY_SIMPLEX, 0.75, color[doDetect], 2)
