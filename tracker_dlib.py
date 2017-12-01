@@ -140,23 +140,23 @@ def creatTracker(tracker_type):
 
 
 class TrackerWithState(object):
-    
+
     def __init__(self, tracker_type):
         self.cvTracker = creatTracker(tracker_type)
         self.ok = False
         self.bbox = []
-    
+
     def update(self, frame):
         trackOk, bbox = self.cvTracker.update(frame)
         self.ok = trackOk
         self.bbox = bbox
-        return trackOk, bbox 
+        return trackOk, bbox
 
     def init(self, frame, rect):
-        self.cvTracker.init(frame, rect) 
+        self.cvTracker.init(frame, rect)
         self.ok = True
         self.bbox = rect
-    
+
 
 def rect2bbox(rect):
     """convert rect into bbox.
@@ -290,8 +290,6 @@ if __name__ == '__main__':
 
         doDetect = (counter % interval == interval - 1)
 
-        states = []
-        
         indexes = range(len(trackers))
         indexes.reverse()
         for i in indexes:
@@ -306,7 +304,6 @@ if __name__ == '__main__':
                 left, top, w, h = bbox
                 right, bottom = left+w, top+h
                 det = dlib.rectangle(long(left), long(top), long(right), long(bottom))
-#                print  det
                 shape = predictor(frame, det)
                 frame = draw_landmarks(frame, shape)
 
@@ -319,18 +316,17 @@ if __name__ == '__main__':
                 print """del trackers["%d"] """ % i
                 cv2.putText(frame, "Tracking failure detected", (100, 80), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0, 0, 255), 2)
 
-
         if doDetect:
             numUpSampling = 1
             dets, scores, idx = detector.run(frame, numUpSampling)
             rects = dets2rects(dets)
-            print rects
+            print rects, scores, idx
 
             # どれかの検出に重なっているかを調べる。
             # 一番重なりがよいのを見つける。
             # 一番重なりがよいものが、しきい値以上のＩｏＵだったら、追跡の位置を初期化する。
             # 一番の重なりのよいものが一定値未満だったら、新規の追跡を開始する。
-            states = [(tracker.ok, tracker.bbox) for tracker in trackers]
+            states = [(t.ok, t.bbox) for t in trackers]
             alreadyFounds, asTrack = getBestIoU(rects, states)
 
             for j, rect in enumerate(rects):# 検出について
