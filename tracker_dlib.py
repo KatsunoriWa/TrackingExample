@@ -246,6 +246,8 @@ if __name__ == '__main__':
 
     rects = dets2rects(detector(frame, 1))
 
+    print rects
+
     tracker_types = ['BOOSTING', 'MIL', 'KCF', 'TLD', 'MEDIANFLOW', 'GOTURN']
     tracker_type = tracker_types[2]
 
@@ -281,6 +283,7 @@ if __name__ == '__main__':
                 left, top, w, h = bbox
                 right, bottom = left+w, top+h
                 det = dlib.rectangle(long(left), long(top), long(right), long(bottom))
+#                print  det
                 shape = predictor(frame, det)
                 frame = draw_landmarks(frame, shape)
 
@@ -300,7 +303,9 @@ if __name__ == '__main__':
 
 
         if doDetect:
-            rects = dets2rects(detector(frame, 1))
+            numUpSampling = 1
+            rects = dets2rects(detector(frame, numUpSampling)) 
+            print rects
 
             # どれかの検出に重なっているかを調べる。
             # 一番重なりがよいのを見つける。
@@ -323,6 +328,7 @@ if __name__ == '__main__':
                     ok = tracker.init(frame, rect2bbox(rects[j]))
                     trackers.append(tracker)
                     print "new tracking"
+                    print rect2bbox(rect), "# rect2bbox(rect) new tracking"
                     left, top, w, h = rects[j]
                     right, bottom = left+w, top+h
                     det = dlib.rectangle(left, top, right, bottom)
