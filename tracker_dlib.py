@@ -291,11 +291,14 @@ if __name__ == '__main__':
         doDetect = (counter % interval == interval - 1)
 
         states = []
-        for i, tracker in enumerate(trackers):
+        
+        indexes = range(len(trackers))
+        indexes.reverse()
+        for i in indexes:
+            tracker = trackers[i]
             #  追跡する。
             trackOk, bbox = tracker.update(frame)
-            states.append((trackOk, bbox))
-            if ok:            # Tracking success
+            if trackOk:            # Tracking success
                 p1 = (int(bbox[0]), int(bbox[1]))
                 p2 = (int(bbox[0] + bbox[2]), int(bbox[1] + bbox[3]))
                 cv2.rectangle(frame, p1, p2, color[doDetect], 2, 1)
@@ -307,18 +310,13 @@ if __name__ == '__main__':
                 shape = predictor(frame, det)
                 frame = draw_landmarks(frame, shape)
 
-                if False:
-                    faceimage = dlib.get_face_chip(frame, shape, size=320)
-                    cv_rgb_image = np.array(faceimage).astype(np.uint8)
-                    cv_bgr_img = cv2.cvtColor(cv_rgb_image, cv2.COLOR_RGB2BGR)
-                    cv2.imshow('image',cv_bgr_img)
-                    cv2.waitKey(0)
-
                 if doDetect:
                     cv2.putText(frame, "detect  frame", (100, 80), cv2.FONT_HERSHEY_SIMPLEX, 0.75, color[doDetect], 2)
                 else:
                     cv2.putText(frame, "no detect  frame", (100, 80), cv2.FONT_HERSHEY_SIMPLEX, 0.75, color[doDetect], 2)
             else:
+                del trackers[i]
+                print """del trackers["%d"] """ % i
                 cv2.putText(frame, "Tracking failure detected", (100, 80), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0, 0, 255), 2)
 
 
@@ -332,7 +330,7 @@ if __name__ == '__main__':
             # 一番重なりがよいのを見つける。
             # 一番重なりがよいものが、しきい値以上のＩｏＵだったら、追跡の位置を初期化する。
             # 一番の重なりのよいものが一定値未満だったら、新規の追跡を開始する。
-
+            states = [(tracker.ok, tracker.bbox) for tracker in trackers]
             alreadyFounds, asTrack = getBestIoU(rects, states)
 
             for j, rect in enumerate(rects):# 検出について
@@ -345,7 +343,7 @@ if __name__ == '__main__':
                     shape = predictor(frame, det)
                     frame = draw_landmarks(frame, shape)
                 elif alreadyFounds[j] < 0.5 - 0.1:
-                    tracker = creatTracker(tracker_type)
+                    tracker = TrackerWithState(tracker_type)
                     ok = tracker.init(frame, rect2bbox(rects[j]))
                     trackers.append(tracker)
                     print "new tracking"
