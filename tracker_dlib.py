@@ -138,6 +138,26 @@ def creatTracker(tracker_type):
 
     return tracker
 
+
+class TrackerWithState(object):
+    
+    def __init__(self, tracker_type):
+        self.cvTracker = creatTracker(tracker_type)
+        self.ok = False
+        self.bbox = []
+    
+    def update(self, frame):
+        trackOk, bbox = self.cvTracker.update(frame)
+        self.ok = trackOk
+        self.bbox = bbox
+        return trackOk, bbox 
+
+    def init(self, frame, rect):
+        self.cvTracker.init(frame, rect) 
+        self.ok = True
+        self.bbox = rect
+    
+
 def rect2bbox(rect):
     """convert rect into bbox.
     tracker.init() need this data type.
@@ -254,7 +274,7 @@ if __name__ == '__main__':
     trackers = range(len(rects))
 
     for i, rect in enumerate(rects):
-        trackers[i] = creatTracker(tracker_type)
+        trackers[i] = TrackerWithState(tracker_type)
         ok = trackers[i].init(frame, tuple(rects[i]))
 
     counter = 0
