@@ -279,7 +279,7 @@ if __name__ == '__main__':
                 p1 = (int(bbox[0]), int(bbox[1]))
                 p2 = (int(bbox[0] + bbox[2]), int(bbox[1] + bbox[3]))
                 cv2.rectangle(frame, p1, p2, color[doDetect], 2, 1)
-                
+
                 left, top, w, h = bbox
                 right, bottom = left+w, top+h
                 det = dlib.rectangle(long(left), long(top), long(right), long(bottom))
@@ -304,7 +304,8 @@ if __name__ == '__main__':
 
         if doDetect:
             numUpSampling = 1
-            rects = dets2rects(detector(frame, numUpSampling)) 
+            dets, scores, idx = detector.run(frame, numUpSampling)
+            rects = dets2rects(dets)
             print rects
 
             # どれかの検出に重なっているかを調べる。
