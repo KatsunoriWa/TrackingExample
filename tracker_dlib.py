@@ -359,5 +359,5 @@ if __name__ == '__main__':
         cv2.imshow("Tracking q:quit", frame)
         counter += 1
         k = cv2.waitKey(1) & 0xff
-        if k == ord('q'):
+        if k == ord('q') or k == 27:
             break
