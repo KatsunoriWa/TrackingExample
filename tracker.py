@@ -5,6 +5,7 @@ import sys
 import os
 import numpy as np
 import cv2
+import dlib
 
 def largestRect(rects):
     u"""retturn largest rect in rects
@@ -168,6 +169,70 @@ def rect2bbox(rect):
     assert h > 0
     return (long(x), long(y), long(w), long(h))
 
+
+def dets2rects(dets):
+    """
+    convert dets type to rect type.
+"""
+
+    rects = [[d.left(), d.top(), d.right()-d.left(), d.bottom()-d.top()] for d in dets]
+    return rects
+
+
+def getBestIoU(rects, states):
+    u"""find best matched tracking for each rect.
+    rects: detected rects
+    states: tracking states
+
+    """
+
+    asTrack = len(rects)*[None]
+    alreadyFounds = len(rects)*[0.0]
+
+    for j, rect in enumerate(rects):# 検出について
+        for k, (_, bbox) in  enumerate(states):#追跡について
+            IoU = getIoU(bbox, rect)
+            assert IoU >= 0.0
+            assert len(rect) == 4
+            assert rect[2] > 0
+            assert rect[3] > 0
+            if IoU > alreadyFounds[j]:
+                alreadyFounds[j] = max(alreadyFounds[j], IoU)
+                asTrack[j] = k
+    return alreadyFounds, asTrack
+
+
+def draw_landmarks(frame, shape):
+    """
+    frame: image
+    shape: landmark points by dlib.shape_predictor(predictor_path)
+    """
+    for shape_point_count in range(shape.num_parts):
+        shape_point = shape.part(shape_point_count)
+        if shape_point_count < 17: # [0-16]:輪郭
+            cv2.circle(frame, (int(shape_point.x), int(shape_point.y)), 2, (0, 0, 255), -1)
+        elif shape_point_count < 22: # [17-21]眉（右）
+            cv2.circle(frame, (int(shape_point.x), int(shape_point.y)), 2, (0, 255, 0), -1)
+        elif shape_point_count < 27: # [22-26]眉（左）
+            cv2.circle(frame, (int(shape_point.x), int(shape_point.y)), 2, (255, 0, 0), -1)
+        elif shape_point_count < 31: # [27-30]鼻背
+            cv2.circle(frame, (int(shape_point.x), int(shape_point.y)), 2, (0, 255, 255), -1)
+        elif shape_point_count < 36: # [31-35]鼻翼、鼻尖
+            cv2.circle(frame, (int(shape_point.x), int(shape_point.y)), 2, (255, 255, 0), -1)
+        elif shape_point_count < 42: # [36-4142目47）
+            cv2.circle(frame, (int(shape_point.x), int(shape_point.y)), 2, (255, 0, 255), -1)
+        elif shape_point_count < 48: # [42-47]目（左）
+            cv2.circle(frame, (int(shape_point.x), int(shape_point.y)), 2, (0, 0, 128), -1)
+        elif shape_point_count < 55: # [48-54]上唇（上側輪郭）
+            cv2.circle(frame, (int(shape_point.x), int(shape_point.y)), 2, (0, 128, 0), -1)
+        elif shape_point_count < 60: # [54-59]下唇（下側輪郭）
+            cv2.circle(frame, (int(shape_point.x), int(shape_point.y)), 2, (128, 0, 0), -1)
+        elif shape_point_count < 65: # [60-64]上唇（下側輪郭）
+            cv2.circle(frame, (int(shape_point.x), int(shape_point.y)), 2, (0, 128, 255), -1)
+        elif shape_point_count < 68: # [65-67]下唇（上側輪郭）
+            cv2.circle(frame, (int(shape_point.x), int(shape_point.y)), 2, (128, 255, 0), -1)
+    return frame
+
 if __name__ == '__main__':
     if len(sys.argv) == 1:
         print """usage:%s [moviefile | uvcID]
@@ -270,10 +335,11 @@ if __name__ == '__main__':
 
         cv2.putText(frame, tracker_type + " Tracker", (100, 20), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (50, 170, 50), 2);
 
+        cv2.putText(frame, "# of Trackers = %d" % len(trackers), (100, 400), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (50, 170, 50), 2);
 
-        cv2.imshow("Tracking", frame)
+
+        cv2.imshow("Tracking q:quit", frame)
         counter += 1
-        # Exit if ESC pressed
         k = cv2.waitKey(1) & 0xff
         if k == ord('q') or k == 27:
             break
