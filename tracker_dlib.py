@@ -260,11 +260,12 @@ if __name__ == '__main__':
     test_getIoU()
 
     detector = dlib.get_frontal_face_detector()
+    numUpSampling = 1
 
     predictor_path = "./shape_predictor_68_face_landmarks.dat"
     predictor = dlib.shape_predictor(predictor_path)
-
-    rects = dets2rects(detector(frame, 1))
+    dets, scores, idx = detector.run(frame, numUpSampling)
+    rects = dets2rects(dets)
 
     print rects
 
@@ -317,7 +318,6 @@ if __name__ == '__main__':
                 cv2.putText(frame, "Tracking failure detected", (100, 80), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0, 0, 255), 2)
 
         if doDetect:
-            numUpSampling = 1
             dets, scores, idx = detector.run(frame, numUpSampling)
             rects = dets2rects(dets)
             print rects, scores, idx
