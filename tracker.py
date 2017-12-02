@@ -259,6 +259,17 @@ if __name__ == '__main__':
     test_overlapRegion()
     test_getIoU()
 
+#    #<dlib>
+#    detector = dlib.get_frontal_face_detector()
+#    numUpSampling = 1
+#
+    predictor_path = "./shape_predictor_68_face_landmarks.dat"
+    predictor = dlib.shape_predictor(predictor_path)
+#    dets, scores, idx = detector.run(frame, numUpSampling)
+#    rects = dets2rects(dets)
+#    #</dlib>
+
+    #<haar>
     cascade_path = "haarcascade_frontalface_alt.xml"
     if not os.path.isfile(cascade_path):
         print "be sure to get ready for %s" % os.path.basename(cascade_path)
@@ -266,6 +277,8 @@ if __name__ == '__main__':
 
     cascade = cv2.CascadeClassifier(cascade_path)
     rects = cascade.detectMultiScale(frame, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
+
+    #</haar>
 
     print rects
 
@@ -275,7 +288,7 @@ if __name__ == '__main__':
     trackers = range(len(rects))
 
     for i, rect in enumerate(rects):
-        trackers[i] = creatTracker(tracker_type)
+        trackers[i] = TrackerWithState(tracker_type)
         ok = trackers[i].init(frame, tuple(rects[i]))
 
     counter = 0
@@ -290,52 +303,71 @@ if __name__ == '__main__':
             break
 
         doDetect = (counter % interval == interval - 1)
-            
-        if doDetect:
-            rects = cascade.detectMultiScale(frame, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
 
-            alreadyFounds = len(rects)*[0.0]
-
-        for i, tracker in enumerate(trackers):
-            ok, bbox = tracker.update(frame)
-            if ok:            # Tracking success
+        indexes = range(len(trackers))
+        indexes.reverse()
+        for i in indexes:
+            tracker = trackers[i]
+            #  追跡する。
+            trackOk, bbox = tracker.update(frame)
+            if trackOk:            # Tracking success
                 p1 = (int(bbox[0]), int(bbox[1]))
                 p2 = (int(bbox[0] + bbox[2]), int(bbox[1] + bbox[3]))
-                cv2.rectangle(frame, p1, p2, (255, 0, 0), 2, 1)
+                cv2.rectangle(frame, p1, p2, color[doDetect], 2, 1)
+
+                left, top, w, h = bbox
+                right, bottom = left+w, top+h
+#                det = dlib.rectangle(long(left), long(top), long(right), long(bottom))
+#                shape = predictor(frame, det)
+#                frame = draw_landmarks(frame, shape)
+
+                if doDetect:
+                    cv2.putText(frame, "detect  frame", (100, 80), cv2.FONT_HERSHEY_SIMPLEX, 0.75, color[doDetect], 2)
+                else:
+                    cv2.putText(frame, "no detect  frame", (100, 80), cv2.FONT_HERSHEY_SIMPLEX, 0.75, color[doDetect], 2)
             else:
+                del trackers[i]
+                print """del trackers["%d"] """ % i
                 cv2.putText(frame, "Tracking failure detected", (100, 80), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0, 0, 255), 2)
 
-
-            if doDetect:
-    
-                for j, rect in enumerate(rects):
-                    IoU = getIoU(bbox, rect)
-                    assert IoU >= 0.0
-                    assert IoU < 1.0
-                    assert len(rect) == 4
-                    assert rect[2] > 0
-                    assert rect[3] > 0
-                    alreadyFounds[j] = max(alreadyFounds[j], IoU)
-                    if alreadyFounds[j] > 0.5:
-                        print rect2bbox(rect)
-                        ok = tracker.init(frame, rect2bbox(rect))
-                                        
-
-                print rects, alreadyFounds
         if doDetect:
+#            #<dlib>
+#            dets, scores, idx = detector.run(frame, numUpSampling)
+#            rects = dets2rects(dets)
+#            print rects, scores, idx
+#            #</dlib>
+            #<haar>
+            rects = cascade.detectMultiScale(frame, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
+            #</haar>
 
-            for j, alreadyFound in enumerate(alreadyFounds):
-                if alreadyFound < 0.5:
-                    print rects[j]
-                    x,y,w,h = rects[j]
-                    cv2.rectangle(frame, (x,y), (x+w, y+h), (0, 0, 255), 2, 1)
-    
-    
-            for j, alreadyFound in enumerate(alreadyFounds):
-                if alreadyFound < 0.5:
-                    tracker = creatTracker(tracker_type)
+            # どれかの検出に重なっているかを調べる。
+            # 一番重なりがよいのを見つける。
+            # 一番重なりがよいものが、しきい値以上のＩｏＵだったら、追跡の位置を初期化する。
+            # 一番の重なりのよいものが一定値未満だったら、新規の追跡を開始する。
+            states = [(t.ok, t.bbox) for t in trackers]
+            alreadyFounds, asTrack = getBestIoU(rects, states)
+
+            for j, rect in enumerate(rects):# 検出について
+                if alreadyFounds[j] > 0.5:
+                    print rect2bbox(rect), "# rect2bbox(rect)"
+                    ok = trackers[asTrack[j]].init(frame, rect2bbox(rect))
+                    left, top, w, h = rect
+                    right, bottom = left+w, top+h
+#                    det = dlib.rectangle(long(left), long(top), long(right), long(bottom))
+#                    shape = predictor(frame, det)
+#                    frame = draw_landmarks(frame, shape)
+                elif alreadyFounds[j] < 0.5 - 0.1:
+                    tracker = TrackerWithState(tracker_type)
                     ok = tracker.init(frame, rect2bbox(rects[j]))
                     trackers.append(tracker)
+                    print "new tracking"
+                    print rect2bbox(rect), "# rect2bbox(rect) new tracking"
+                    left, top, w, h = rects[j]
+#                    right, bottom = left+w, top+h
+#                    det = dlib.rectangle(left, top, right, bottom)
+#                    shape = predictor(frame, det)
+                else:
+                    continue
 
         cv2.putText(frame, tracker_type + " Tracker", (100, 20), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (50, 170, 50), 2);
 
