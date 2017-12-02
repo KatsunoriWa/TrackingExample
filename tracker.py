@@ -240,12 +240,6 @@ if __name__ == '__main__':
         sys.exit()
 
     (major_ver, minor_ver, subminor_ver) = (cv2.__version__).split(".")
-    cascade_path = "haarcascade_frontalface_alt.xml"
-    if not os.path.isfile(cascade_path):
-        print "be sure to get ready for %s" % os.path.basename(cascade_path)
-        sys.exit()
-
-    cascade = cv2.CascadeClassifier(cascade_path)
 
     try:
         num = int(sys.argv[1])
@@ -265,7 +259,15 @@ if __name__ == '__main__':
     test_overlapRegion()
     test_getIoU()
 
+    cascade_path = "haarcascade_frontalface_alt.xml"
+    if not os.path.isfile(cascade_path):
+        print "be sure to get ready for %s" % os.path.basename(cascade_path)
+        sys.exit()
+
+    cascade = cv2.CascadeClassifier(cascade_path)
     rects = cascade.detectMultiScale(frame, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
+
+    print rects
 
     tracker_types = ['BOOSTING', 'MIL', 'KCF', 'TLD', 'MEDIANFLOW', 'GOTURN']
     tracker_type = tracker_types[2]
@@ -278,14 +280,16 @@ if __name__ == '__main__':
 
     counter = 0
 
-    interval = 5    
-    
+    interval = 20
+
+
+    color = {True:(0, 0, 255), False:(255, 0, 0)}
     while True:
         ok, frame = video.read()
         if not ok:
             break
 
-        doDetect = (counter % interval == interval - 1)         
+        doDetect = (counter % interval == interval - 1)
             
         if doDetect:
             rects = cascade.detectMultiScale(frame, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
