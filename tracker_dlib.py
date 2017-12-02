@@ -259,13 +259,16 @@ if __name__ == '__main__':
     test_overlapRegion()
     test_getIoU()
 
+    predictor_path = "./shape_predictor_68_face_landmarks.dat"
+    predictor = dlib.shape_predictor(predictor_path)
+
+    #<dlib>
     detector = dlib.get_frontal_face_detector()
     numUpSampling = 1
 
-    predictor_path = "./shape_predictor_68_face_landmarks.dat"
-    predictor = dlib.shape_predictor(predictor_path)
     dets, scores, idx = detector.run(frame, numUpSampling)
     rects = dets2rects(dets)
+    #</dlib>
 
     print rects
 
@@ -318,9 +321,11 @@ if __name__ == '__main__':
                 cv2.putText(frame, "Tracking failure detected", (100, 80), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0, 0, 255), 2)
 
         if doDetect:
+            #<dlib>
             dets, scores, idx = detector.run(frame, numUpSampling)
             rects = dets2rects(dets)
             print rects, scores, idx
+            #</dlib>
 
             # どれかの検出に重なっているかを調べる。
             # 一番重なりがよいのを見つける。

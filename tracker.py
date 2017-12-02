@@ -259,15 +259,8 @@ if __name__ == '__main__':
     test_overlapRegion()
     test_getIoU()
 
-#    #<dlib>
-#    detector = dlib.get_frontal_face_detector()
-#    numUpSampling = 1
-#
     predictor_path = "./shape_predictor_68_face_landmarks.dat"
     predictor = dlib.shape_predictor(predictor_path)
-#    dets, scores, idx = detector.run(frame, numUpSampling)
-#    rects = dets2rects(dets)
-#    #</dlib>
 
     #<haar>
     cascade_path = "haarcascade_frontalface_alt.xml"
@@ -277,7 +270,6 @@ if __name__ == '__main__':
 
     cascade = cv2.CascadeClassifier(cascade_path)
     rects = cascade.detectMultiScale(frame, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
-
     #</haar>
 
     print rects
@@ -331,11 +323,6 @@ if __name__ == '__main__':
                 cv2.putText(frame, "Tracking failure detected", (100, 80), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0, 0, 255), 2)
 
         if doDetect:
-#            #<dlib>
-#            dets, scores, idx = detector.run(frame, numUpSampling)
-#            rects = dets2rects(dets)
-#            print rects, scores, idx
-#            #</dlib>
             #<haar>
             rects = cascade.detectMultiScale(frame, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
             #</haar>
