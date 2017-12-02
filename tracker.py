@@ -3,6 +3,7 @@
 # pylint: disable=C0103
 import sys
 import os
+import numpy as np
 import cv2
 
 def largestRect(rects):
@@ -21,7 +22,12 @@ def largestRect(rects):
     return largest
 
 def overlapRange(lim1, lim2):
-    start = max(lim1[0],  lim2[0])
+    """return overlapped lim
+    lim1:
+    lim2:
+    """
+
+    start = max(lim1[0], lim2[0])
     stop = min(lim1[1], lim2[1])
 
     if start > stop:
@@ -51,7 +57,7 @@ def overlapRectArea(rect1, rect2):
         area = (right3-left3)*(bottom3-top3)
         area >= 0.0
         return area
-        
+
 def test_overlapRegion():
     lim = overlapRange([0, 10], [0, 10])
     assert lim == [0, 10]
@@ -90,22 +96,22 @@ def getIoU(rect1, rect2):
     IoU = intersection/float(union)
     assert IoU >= 0
     return IoU
-    
+
 
 def test_getIoU():
     IoU = getIoU([10, 20, 30, 40], [10, 20, 30, 40])
     print IoU
     assert IoU == 1.0
-    
+
     IoU = getIoU([10, 20, 30, 40], [10, 20, 30, 20])
     print IoU
-    assert IoU <=0.5+0.01
+    assert IoU <= 0.5+0.01
     assert 0.5 - 0.01 <= IoU
 
     IoU = getIoU([10, 20, 30, 40], [10, 25, 30, 40])
     print IoU
     assert IoU < 1.0
-    assert 0.0 <=IoU
+    assert IoU >= 0.0
 
 
 def creatTracker(tracker_type):
@@ -131,9 +137,33 @@ def creatTracker(tracker_type):
 
     return tracker
 
+
+class TrackerWithState(object):
+
+    def __init__(self, tracker_type):
+        self.cvTracker = creatTracker(tracker_type)
+        self.ok = False
+        self.bbox = []
+
+    def update(self, frame):
+        trackOk, bbox = self.cvTracker.update(frame)
+        self.ok = trackOk
+        self.bbox = bbox
+        return trackOk, bbox
+
+    def init(self, frame, rect):
+        self.cvTracker.init(frame, rect)
+        self.ok = True
+        self.bbox = rect
+
+
 def rect2bbox(rect):
+    """convert rect into bbox.
+    tracker.init() need this data type.
+    """
+
     assert len(rect) == 4
-    x,y,w,h = rect
+    x, y, w, h = rect
     assert w > 0
     assert h > 0
     return (long(x), long(y), long(w), long(h))
@@ -157,7 +187,6 @@ if __name__ == '__main__':
         video = cv2.VideoCapture(num)
     except:
         video = cv2.VideoCapture(sys.argv[1])
-#    video = cv2.VideoCapture(0)
 
     if not video.isOpened():
         print "Could not open video"
@@ -167,7 +196,6 @@ if __name__ == '__main__':
     if not ok:
         print 'Cannot read video file'
         sys.exit()
-
 
     test_overlapRegion()
     test_getIoU()
