@@ -360,7 +360,7 @@ if __name__ == '__main__':
 
         cv2.putText(frame, "# of Trackers = %d" % len(trackers), (100, 400), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (50, 170, 50), 2);
 
-
+        cv2.namedWindow("Tracking q:quit", cv2.WINDOW_NORMAL)
         cv2.imshow("Tracking q:quit", frame)
         counter += 1
         k = cv2.waitKey(1) & 0xff
