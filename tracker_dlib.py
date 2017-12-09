@@ -3,9 +3,37 @@
 # pylint: disable=C0103
 import sys
 import os
+import time
 import numpy as np
 import cv2
 import dlib
+import PIL.Image
+
+def expandRegion(rect, rate):
+    """expand rectange x,y,w,h keeping center postion.
+    rect: x,y,w,h
+    rate
+    """
+
+    x, y, w, h = rect
+    xc, yc = x+w/2, y+w/2
+
+    nw = int(rate*w)
+    nh = int(rate*h)
+
+    nx = xc - nw/2
+    ny = yc - nh/2
+    return [nx, ny, nw, nh]
+
+def sizedCrop(img, xyxy):
+    u"""Returns a rectangular region from this image.
+    The box is a 4-tuple defining the left, upper, right, and lower pixel coordinate.
+    切り出す領域に画像の範囲外を指定した場合、エラーにはならず黒く表示される。
+    """
+    pilImg = PIL.Image.fromarray(img)
+    pilsubImg = pilImg.crop(xyxy)
+    subImg = np.asarray(pilsubImg)
+    return subImg
 
 def largestRect(rects):
     u"""retturn largest rect in rects
@@ -234,8 +262,11 @@ def draw_landmarks(frame, shape):
     return frame
 
 if __name__ == '__main__':
+    import getopt
+    optlist, sys.argv[1:] = getopt.getopt(sys.argv[1:], '', ['crop'])
     if len(sys.argv) == 1:
-        print """usage:%s [moviefile | uvcID]
+        print """usage:%s  [--crop] (moviefile | uvcID)
+--crop: enable crop
         """ % sys.argv[0]
         sys.exit()
 
@@ -250,6 +281,14 @@ if __name__ == '__main__':
     if not video.isOpened():
         print "Could not open video"
         sys.exit()
+
+    doCrop = False
+    if ('--crop', '') in optlist:
+        doCrop = True
+
+    cropDir = "crop"
+    if not os.path.isdir(cropDir):
+        os.makedirs(cropDir)
 
     ok, frame = video.read()
     if not ok:
@@ -291,6 +330,8 @@ if __name__ == '__main__':
         ok, frame = video.read()
         if not ok:
             break
+
+        frameCopy = frame+0
 
         doDetect = (counter % interval == interval - 1)
 
@@ -355,6 +396,28 @@ if __name__ == '__main__':
                     shape = predictor(frame, det)
                 else:
                     continue
+
+                if doCrop:
+                    subImg = frameCopy[top:bottom, left:right, :]
+
+                    datetimestring = time.strftime("%Y%m%d_%H%M%S", time.localtime())
+                    cropName = os.path.join(cropDir, "%s.png" % datetimestring)
+                    cv2.imwrite(cropName, subImg)
+
+                    nx, ny, nw, nh = expandRegion(rect, rate=2.0)
+                    nleft, ntop, nright, nbottom = nx, ny, nx+nw, ny+nh
+                    assert ntop < nbottom
+                    assert nleft < nright
+
+                    subImg3 = sizedCrop(frameCopy, (nleft, ntop, nright, nbottom))
+                    cropName3 = os.path.join(cropDir, "%s_b.png" % datetimestring)
+                    cv2.imwrite(cropName3, subImg3)
+
+                if 0:
+                    image = dlib.get_face_chip(frame, det, size=320)
+                    cv_bgr_img = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+                    cv2.imshow('image', cv_bgr_img)
+                    cv2.waitKey(0)
 
         cv2.putText(frame, tracker_type + " Tracker", (100, 20), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (50, 170, 50), 2);
 
