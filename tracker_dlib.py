@@ -369,7 +369,7 @@ if __name__ == '__main__':
                     faces.append(predictor(frame, detection))
 
             for face in faces:
-                image = dlib.get_face_chip(frameCopy, face, size=320)
+                image = dlib.get_face_chip(frameCopy, face, size=320, padding=0.5)
                 image = np.array(image, dtype=np.uint8)
                 cv2.imshow('image', image)
                 cv2.waitKey(10)
@@ -425,8 +425,7 @@ if __name__ == '__main__':
 
 
                 if 1:
-#                    image = dlib.get_face_chip(frame, det, size=320)
-                    image = dlib.get_face_chip(frameCopy, shape, size=320)
+                    image = dlib.get_face_chip(frameCopy, shape, size=320, padding=0.5)
                     image = np.array(image, dtype=np.uint8)
                     cv2.imshow('image', image)
                     cv2.waitKey(10)
