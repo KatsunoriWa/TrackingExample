@@ -364,6 +364,16 @@ if __name__ == '__main__':
         if doDetect:
             #<dlib>
             dets, scores, idx = detector.run(frame, numUpSampling)
+            faces = dlib.full_object_detections()
+            for detection in dets:
+                    faces.append(predictor(frame, detection))
+
+            for face in faces:
+                image = dlib.get_face_chip(frameCopy, face, size=320)
+                image = np.array(image, dtype=np.uint8)
+                cv2.imshow('image', image)
+                cv2.waitKey(10)
+
             rects = dets2rects(dets)
             print rects, scores, idx
             #</dlib>
@@ -413,11 +423,13 @@ if __name__ == '__main__':
                     cropName3 = os.path.join(cropDir, "%s_b.png" % datetimestring)
                     cv2.imwrite(cropName3, subImg3)
 
-                if 0:
-                    image = dlib.get_face_chip(frame, det, size=320)
-                    cv_bgr_img = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
-                    cv2.imshow('image', cv_bgr_img)
-                    cv2.waitKey(0)
+
+                if 1:
+#                    image = dlib.get_face_chip(frame, det, size=320)
+                    image = dlib.get_face_chip(frameCopy, shape, size=320)
+                    image = np.array(image, dtype=np.uint8)
+                    cv2.imshow('image', image)
+                    cv2.waitKey(10)
 
         cv2.putText(frame, tracker_type + " Tracker", (100, 20), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (50, 170, 50), 2);
 
