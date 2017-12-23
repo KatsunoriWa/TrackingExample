@@ -10,7 +10,6 @@ import cv2
 import dlib # http://dlib.net
 import tracker_dlib
 
-#from  facePose import *
 import facePose
 
 """
