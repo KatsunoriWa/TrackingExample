@@ -66,6 +66,9 @@ def dets2xxyys(dets):
 
 
 class FacePosePredictor(object):
+    """
+    A face Pose Predcitor using pre-trained caffe model.
+    """
 
     def __init__(self):
         self.M_left = -0.15
@@ -89,6 +92,11 @@ class FacePosePredictor(object):
 
 
     def predict(self, colorImage, xxyys):
+        """
+        predcit pitch yaw, roll for each rectangle.
+        colorImage:
+        xxyys: list of rectangle
+        """
 
 
         def getRGBTestPart(img, xxyy, left, right, top, bottom, asHeight, asWidth):
@@ -164,6 +172,11 @@ class FacePosePredictor(object):
 
 
     def predict1(self, colorImage, xxyy):
+        """
+        predcit pitch yaw, roll for single rectangle.
+        colorImage:
+        xxyy: single rectangle
+        """
         predictpoints, landmarks, predictposes = self.predict(colorImage, np.array([xxyy]))
 
         return predictpoints[0], landmarks[0], predictposes[0, :]
