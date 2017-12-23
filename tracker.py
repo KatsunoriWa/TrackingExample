@@ -3,55 +3,68 @@
 # pylint: disable=C0103
 import sys
 import os
-import numpy as np
 import cv2
 import dlib
 import librect
 
-
-
-def creatTracker(tracker_type):
-    u"""
-    create Tracker
+class TrackerWithState(object):
+    """
+    tracker
     """
 
-    if int(minor_ver) < 3:
-        tracker = cv2.Tracker_create(tracker_type)
-    else:
-        if tracker_type == 'BOOSTING':
-            tracker = cv2.TrackerBoosting_create()
-        if tracker_type == 'MIL':
-            tracker = cv2.TrackerMIL_create()
-        if tracker_type == 'KCF':
-            tracker = cv2.TrackerKCF_create()
-        if tracker_type == 'TLD':
-            tracker = cv2.TrackerTLD_create()
-        if tracker_type == 'MEDIANFLOW':
-            tracker = cv2.TrackerMedianFlow_create()
-        if tracker_type == 'GOTURN':
-            tracker = cv2.TrackerGOTURN_create()
-
-    return tracker
-
-
-class TrackerWithState(object):
-
     def __init__(self, tracker_type):
-        self.cvTracker = creatTracker(tracker_type)
+        """create tracter instance
+        tracker_type:
+        """
+
+        self.cvTracker = self._creatTracker(tracker_type)
         self.ok = False
         self.bbox = []
 
     def update(self, frame):
+        """
+        frame: frame image
+        """
+
         trackOk, bbox = self.cvTracker.update(frame)
         self.ok = trackOk
         self.bbox = bbox
         return trackOk, bbox
 
     def init(self, frame, rect):
+        """
+        initialize tracker instance with frame and rect
+        frame:
+        rect:
+        """
+
         self.cvTracker.init(frame, rect)
         self.ok = True
         self.bbox = rect
 
+
+    def _creatTracker(self, tracker_type):
+        u"""
+        create Tracker
+        """
+
+        if int(minor_ver) < 3:
+            tracker = cv2.Tracker_create(tracker_type)
+        else:
+            if tracker_type == 'BOOSTING':
+                tracker = cv2.TrackerBoosting_create()
+            if tracker_type == 'MIL':
+                tracker = cv2.TrackerMIL_create()
+            if tracker_type == 'KCF':
+                tracker = cv2.TrackerKCF_create()
+            if tracker_type == 'TLD':
+                tracker = cv2.TrackerTLD_create()
+            if tracker_type == 'MEDIANFLOW':
+                tracker = cv2.TrackerMedianFlow_create()
+            if tracker_type == 'GOTURN':
+                tracker = cv2.TrackerGOTURN_create()
+
+        return tracker
 
 
 
