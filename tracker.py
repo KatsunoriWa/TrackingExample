@@ -47,6 +47,7 @@ class TrackerWithState(object):
         u"""
         create Tracker
         """
+        (major_ver, minor_ver, subminor_ver) = (cv2.__version__).split(".")
 
         if int(minor_ver) < 3:
             tracker = cv2.Tracker_create(tracker_type)
@@ -104,8 +105,6 @@ if __name__ == '__main__':
         print """usage:%s [moviefile | uvcID]
         """ % sys.argv[0]
         sys.exit()
-
-    (major_ver, minor_ver, subminor_ver) = (cv2.__version__).split(".")
 
     try:
         num = int(sys.argv[1])
