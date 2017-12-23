@@ -8,7 +8,7 @@ import sys
 import time
 import cv2
 import dlib # http://dlib.net
-import tracker_dlib
+import librect
 
 import facePose
 
@@ -66,14 +66,14 @@ def show_image(img, landmarks, bboxs, headposes):
                 
         left, right,  top, bottom = bboxs[faceNum, :]
         rect = [left, top, right-left, bottom - top]
-        nx, ny, nw, nh = tracker_dlib.expandRegion(rect, rate=2.0)
+        nx, ny, nw, nh = librect.expandRegion(rect, rate=2.0)
         nleft, ntop, nright, nbottom = nx, ny, nx+nw, ny+nh
         assert ntop < nbottom
         assert nleft < nright
 
         datetimeStr = time.strftime("%Y%m%d_%H%M%S", time.localtime())
 
-        subImg3 = tracker_dlib.sizedCrop(orgImg, (nleft, ntop, nright, nbottom))
+        subImg3 = librect.sizedCrop(orgImg, (nleft, ntop, nright, nbottom))
         cropName3 = os.path.join(cropPyDir, "%s_%s_b.png" % (pyrStr, datetimeStr))
         cv2.imwrite(cropName3, subImg3)
         
