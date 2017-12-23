@@ -183,7 +183,7 @@ class FacePosePredictor(object):
 
 
 def roundByD(angle, delta):
-    """
+    """round angle by delta
     angle:
     delta:
 >>> roundByD(8, 10)
@@ -195,6 +195,12 @@ def roundByD(angle, delta):
 
 
 def getPyrStr(pitch, yaw, roll):
+    """
+    pitch:
+    yaw:
+    roll:
+    """
+
     pitchDelta = 5
     yawDelta = 5
     rollDelta = 10
@@ -203,6 +209,11 @@ def getPyrStr(pitch, yaw, roll):
     return pyrDir
 
 def getPyStr(pitch, yaw):
+    """
+    pitch:
+    yaw:
+    """
+
     pitchDelta = 5
     yawDelta = 5
     rollDelta = 10
