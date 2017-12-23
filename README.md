@@ -8,7 +8,7 @@ Tracking example code using OpenCV Tracker class in python.
 
 # usage:
 
-dlib face detection
+dlib face detection version
 ```
 $ python tracker_dlib.py
 usage:tracker_dlib.py [moviefile | uvcID]
@@ -19,7 +19,8 @@ $
 ```
 
 
-OpenCV face detection
+OpenCV face detection version
+
 ```
 $ python tracker.py
 usage:tracker.py [moviefile | uvcID]
