@@ -1,12 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 # pylint: disable=C0103
-import sys
-import os
-import time
 import numpy as np
-import cv2
-import dlib
 import PIL.Image
 
 def largestRect(rects):
@@ -160,3 +155,31 @@ def getBestIoU(rects, states):
                 alreadyFounds[j] = max(alreadyFounds[j], IoU)
                 asTrack[j] = k
     return alreadyFounds, asTrack
+
+
+def expandRegion(rect, rate):
+    """expand rectange x,y,w,h keeping center postion.
+    rect: x,y,w,h
+    rate
+    """
+
+    x, y, w, h = rect
+    xc, yc = x+w/2, y+w/2
+
+    nw = int(rate*w)
+    nh = int(rate*h)
+
+    nx = xc - nw/2
+    ny = yc - nh/2
+    return [nx, ny, nw, nh]
+
+def sizedCrop(img, xyxy):
+    u"""Returns a rectangular region from this alignedImg.
+    The box is a 4-tuple defining the left, upper, right, and lower pixel coordinate.
+    When outside of the image is specified, it is displayed as black without an error.
+    """
+
+    pilImg = PIL.Image.fromarray(img)
+    pilsubImg = pilImg.crop(xyxy)
+    subImg = np.asarray(pilsubImg)
+    return subImg
