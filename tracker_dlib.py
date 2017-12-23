@@ -9,9 +9,8 @@ import cv2
 import dlib
 
 import librect
-import tracker
+import libtracker
 import facePose
-
 
 def draw_landmarks(frame, shape):
     """
@@ -46,10 +45,12 @@ def draw_landmarks(frame, shape):
 
 if __name__ == '__main__':
     import getopt
-    optlist, sys.argv[1:] = getopt.getopt(sys.argv[1:], '', ['crop'])
+    optlist, sys.argv[1:] = getopt.getopt(sys.argv[1:], '', ['crop', 'align', 'saveFull'])
     if len(sys.argv) == 1:
         print """usage:%s  [--crop] (moviefile | uvcID)
 --crop: enable crop
+--align: enable aligne
+--saveFull: save full image
         """ % sys.argv[0]
         sys.exit()
 
@@ -68,9 +69,16 @@ if __name__ == '__main__':
     if ('--crop', '') in optlist:
         doCrop = True
 
-    doCrop = True
-    doAlign = True
+    doAlign = False
+    if ('--align', '') in optlist:
+        doAlign = True
+
+
     doSaveFull = False
+    if ('--saveFull', '') in optlist:
+        doSaveFull = True
+
+
     cropDir = "crop"
     if not os.path.isdir(cropDir):
         os.makedirs(cropDir)
@@ -108,7 +116,7 @@ if __name__ == '__main__':
     trackers = range(len(rects))
 
     for i, rect in enumerate(rects):
-        trackers[i] = tracker.TrackerWithState(tracker_type)
+        trackers[i] = libtracker.TrackerWithState(tracker_type)
         ok = trackers[i].init(frame, tuple(rects[i]))
 
     counter = 0
@@ -173,6 +181,7 @@ if __name__ == '__main__':
                 subImg3 = librect.sizedCrop(frameCopy, (nleft, ntop, nright, nbottom))
                 cropName3 = os.path.join(cropPyrDir, "%s_b.png" % datetimestring)
                 cv2.imwrite(cropName3, subImg3)
+                print  cropName3
 
             if doAlign:
                 alignedImg = dlib.get_face_chip(frameCopy, shape, size=320, padding=0.5)
@@ -180,6 +189,7 @@ if __name__ == '__main__':
                 cv2.imshow('alignedImg', alignedImg)
                 cropName4 = os.path.join(cropPyrDir, "%s_aligned.png" % datetimestring)
                 cv2.imwrite(cropName4, alignedImg)
+                print cropName4
                 k = cv2.waitKey(1) & 0xff
                 if k == ord('q') or k == 27:
                     break
@@ -223,7 +233,7 @@ if __name__ == '__main__':
                     [left, right, top, bottom] = [det.left(), det.right(), det.top(), det.bottom()]
                 elif alreadyFounds[j] < 0.5 - 0.1:
                     # 対応する追跡がないとして、新規の検出にする。
-                    tracker = tracker.TrackerWithState(tracker_type)
+                    tracker = libtracker.TrackerWithState(tracker_type)
                     ok = tracker.init(frame, librect.rect2bbox(rects[j]))
                     trackers.append(tracker)
                     print "new tracking"
