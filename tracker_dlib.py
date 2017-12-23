@@ -7,140 +7,10 @@ import time
 import numpy as np
 import cv2
 import dlib
-import PIL.Image
 
-def expandRegion(rect, rate):
-    """expand rectange x,y,w,h keeping center postion.
-    rect: x,y,w,h
-    rate
-    """
+import librect
+import facePose
 
-    x, y, w, h = rect
-    xc, yc = x+w/2, y+w/2
-
-    nw = int(rate*w)
-    nh = int(rate*h)
-
-    nx = xc - nw/2
-    ny = yc - nh/2
-    return [nx, ny, nw, nh]
-
-def sizedCrop(img, xyxy):
-    u"""Returns a rectangular region from this image.
-    The box is a 4-tuple defining the left, upper, right, and lower pixel coordinate.
-    切り出す領域に画像の範囲外を指定した場合、エラーにはならず黒く表示される。
-    """
-    pilImg = PIL.Image.fromarray(img)
-    pilsubImg = pilImg.crop(xyxy)
-    subImg = np.asarray(pilsubImg)
-    return subImg
-
-def largestRect(rects):
-    u"""retturn largest rect in rects
-    rects: list of rect
-    """
-
-    if len(rects) < 2:
-        return rects
-
-    largest = rects[0]
-    for i in range(1, len(rects)):
-        if rects[i][2] > largest[2]:
-            largest = rects[i]
-
-    return largest
-
-def overlapRange(lim1, lim2):
-    """return overlapped lim
-    lim1:
-    lim2:
-    """
-
-    start = max(lim1[0], lim2[0])
-    stop = min(lim1[1], lim2[1])
-
-    if start > stop:
-        return [None, None]
-    else:
-        return [start, stop]
-
-def overlapRectArea(rect1, rect2):
-    """return overlapped area
-    rect1:
-    rect2:
-    """
-
-    left1, right1 = rect1[0], rect1[0]+rect1[2]
-    top1, bottom1 = rect1[1], rect1[1]+rect1[3]
-
-
-    left2, right2 = rect2[0], rect2[0]+rect2[2]
-    top2, bottom2 = rect2[1], rect2[1]+rect2[3]
-
-    [left3, right3] = overlapRange([left1, right1], [left2, right2])
-    [top3, bottom3] = overlapRange([top1, bottom1], [top2, bottom2])
-
-    if None in (left3, top3, right3, bottom3):
-        return 0.0
-    else:
-        area = (right3-left3)*(bottom3-top3)
-        area >= 0.0
-        return area
-
-def test_overlapRegion():
-    lim = overlapRange([0, 10], [0, 10])
-    assert lim == [0, 10]
-    lim = overlapRange([0, 10], [0, 20])
-    assert lim == [0, 10]
-    lim = overlapRange([0, 10], [-10, 20])
-    assert lim == [0, 10]
-
-
-    lim = overlapRange([0, 10], [5, 10])
-    assert lim == [5, 10]
-
-    lim = overlapRange([0, 10], [5, 20])
-    assert lim == [5, 10]
-
-    lim = overlapRange([-10, 10], [5, 20])
-    assert lim == [5, 10]
-
-
-    lim = overlapRange([5, 10], [5, 20])
-    assert lim == [5, 10]
-
-
-def getIoU(rect1, rect2):
-    u"""
-    return intersection  over union
-"""
-
-    area1 = rect1[2]*rect1[3]
-    area2 = rect2[2]*rect2[3]
-    intersection = overlapRectArea(rect1, rect2)
-    assert intersection >= 0
-    union = area1+area2 - intersection
-    assert union >= 0
-
-    IoU = intersection/float(union)
-    assert IoU >= 0
-    return IoU
-
-
-def test_getIoU():
-    IoU = getIoU([10, 20, 30, 40], [10, 20, 30, 40])
-    print IoU
-    assert IoU == 1.0
-
-    IoU = getIoU([10, 20, 30, 40], [10, 20, 30, 20])
-    print IoU
-    assert IoU <= 0.5+0.01
-    assert 0.5 - 0.01 <= IoU
-
-    IoU = getIoU([10, 20, 30, 40], [10, 25, 30, 40])
-    print IoU
-    assert IoU < 1.0
-    assert IoU >= 0.0
 
 
 def creatTracker(tracker_type):
@@ -186,53 +56,10 @@ class TrackerWithState(object):
         self.bbox = rect
 
 
-def rect2bbox(rect):
-    """convert rect into bbox.
-    tracker.init() need this data type.
-    """
-
-    assert len(rect) == 4
-    x, y, w, h = rect
-    assert w > 0
-    assert h > 0
-    return (long(x), long(y), long(w), long(h))
-
-
-def dets2rects(dets):
-    """
-    convert dets type to rect type.
-"""
-
-    rects = [[d.left(), d.top(), d.right()-d.left(), d.bottom()-d.top()] for d in dets]
-    return rects
-
-
-def getBestIoU(rects, states):
-    u"""find best matched tracking for each rect.
-    rects: detected rects
-    states: tracking states
-
-    """
-
-    asTrack = len(rects)*[None]
-    alreadyFounds = len(rects)*[0.0]
-
-    for j, rect in enumerate(rects):# 検出について
-        for k, (_, bbox) in  enumerate(states):#追跡について
-            IoU = getIoU(bbox, rect)
-            assert IoU >= 0.0
-            assert len(rect) == 4
-            assert rect[2] > 0
-            assert rect[3] > 0
-            if IoU > alreadyFounds[j]:
-                alreadyFounds[j] = max(alreadyFounds[j], IoU)
-                asTrack[j] = k
-    return alreadyFounds, asTrack
-
 
 def draw_landmarks(frame, shape):
     """
-    frame: image
+    frame: alignedImg
     shape: landmark points by dlib.shape_predictor(predictor_path)
     """
     for shape_point_count in range(shape.num_parts):
@@ -286,27 +113,36 @@ if __name__ == '__main__':
     if ('--crop', '') in optlist:
         doCrop = True
 
+    doCrop = True
+    doAlign = True
+    doSaveFull = False
     cropDir = "crop"
     if not os.path.isdir(cropDir):
         os.makedirs(cropDir)
+
+    fullImgDir = "fullImg"
+    if not os.path.isdir(fullImgDir):
+        os.makedirs(fullImgDir)
 
     ok, frame = video.read()
     if not ok:
         print 'Cannot read video file'
         sys.exit()
 
-    test_overlapRegion()
-    test_getIoU()
+    librect.test_overlapRegion()
+    librect.test_getIoU()
 
     predictor_path = "./shape_predictor_68_face_landmarks.dat"
     predictor = dlib.shape_predictor(predictor_path)
 
     #<dlib>
     detector = dlib.get_frontal_face_detector()
-    numUpSampling = 1
+    numUpSampling = 0
+
+    posePredictor = facePose.FacePosePredictor()
 
     dets, scores, idx = detector.run(frame, numUpSampling)
-    rects = dets2rects(dets)
+    rects = librect.dets2rects(dets)
     #</dlib>
 
     print rects
@@ -322,8 +158,7 @@ if __name__ == '__main__':
 
     counter = 0
 
-    interval = 20
-
+    interval = 1
 
     color = {True:(0, 0, 255), False:(255, 0, 0)}
     while True:
@@ -351,15 +186,48 @@ if __name__ == '__main__':
                 det = dlib.rectangle(long(left), long(top), long(right), long(bottom))
                 shape = predictor(frame, det)
                 frame = draw_landmarks(frame, shape)
-
-                if doDetect:
-                    cv2.putText(frame, "detect  frame", (100, 80), cv2.FONT_HERSHEY_SIMPLEX, 0.75, color[doDetect], 2)
-                else:
-                    cv2.putText(frame, "no detect  frame", (100, 80), cv2.FONT_HERSHEY_SIMPLEX, 0.75, color[doDetect], 2)
+                stateStr = {True:"detect  frame", False:"no detect  frame"}
+                cv2.putText(frame, stateStr[doDetect], (100, 80), cv2.FONT_HERSHEY_SIMPLEX, 0.75, color[doDetect], 2)
             else:
                 del trackers[i]
                 print """del trackers["%d"] """ % i
                 cv2.putText(frame, "Tracking failure detected", (100, 80), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0, 0, 255), 2)
+                continue
+
+            if doCrop:
+                predictpoints, landmarks, headposes = posePredictor.predict(frameCopy, np.array([[left, right, top, bottom]]))
+
+                pitch = headposes[0, 0]
+                yaw = headposes[0, 1]
+                roll = headposes[0, 2]
+
+                cropPyrDir = facePose.getPyrDir(cropDir, pitch, yaw, roll)
+
+                print pitch, yaw, roll, "# pitch, yaw, roll"
+                print cropPyrDir
+
+                subImg = frameCopy[int(top):int(bottom), int(left):int(right), :]
+
+                datetimestring = time.strftime("%Y%m%d_%H%M%S", time.localtime())
+
+                nx, ny, nw, nh = librect.expandRegion(rect, rate=2.0)
+                nleft, ntop, nright, nbottom = nx, ny, nx+nw, ny+nh
+                assert ntop < nbottom
+                assert nleft < nright
+
+                subImg3 = librect.sizedCrop(frameCopy, (nleft, ntop, nright, nbottom))
+                cropName3 = os.path.join(cropPyrDir, "%s_b.png" % datetimestring)
+                cv2.imwrite(cropName3, subImg3)
+
+            if doAlign:
+                alignedImg = dlib.get_face_chip(frameCopy, shape, size=320, padding=0.5)
+                alignedImg = np.array(alignedImg, dtype=np.uint8)
+                cv2.imshow('alignedImg', alignedImg)
+                cropName4 = os.path.join(cropPyrDir, "%s_aligned.png" % datetimestring)
+                cv2.imwrite(cropName4, alignedImg)
+                k = cv2.waitKey(1) & 0xff
+                if k == ord('q') or k == 27:
+                    break
 
         if doDetect:
             #<dlib>
@@ -369,12 +237,14 @@ if __name__ == '__main__':
                     faces.append(predictor(frame, detection))
 
             for face in faces:
-                image = dlib.get_face_chip(frameCopy, face, size=320, padding=0.5)
-                image = np.array(image, dtype=np.uint8)
-                cv2.imshow('image', image)
-                cv2.waitKey(10)
+                alignedImg = dlib.get_face_chip(frameCopy, face, size=320, padding=0.5)
+                alignedImg = np.array(alignedImg, dtype=np.uint8)
+                cv2.imshow('alignedImg', alignedImg)
+                k = cv2.waitKey(1) & 0xff
+                if k == ord('q') or k == 27:
+                    break
 
-            rects = dets2rects(dets)
+            rects = librect.dets2rects(dets)
             print rects, scores, idx
             #</dlib>
 
@@ -383,55 +253,35 @@ if __name__ == '__main__':
             # 一番重なりがよいものが、しきい値以上のＩｏＵだったら、追跡の位置を初期化する。
             # 一番の重なりのよいものが一定値未満だったら、新規の追跡を開始する。
             states = [(t.ok, t.bbox) for t in trackers]
-            alreadyFounds, asTrack = getBestIoU(rects, states)
+            alreadyFounds, asTrack = librect.getBestIoU(rects, states)
 
             for j, rect in enumerate(rects):# 検出について
                 if alreadyFounds[j] > 0.5:
-                    print rect2bbox(rect), "# rect2bbox(rect)"
-                    ok = trackers[asTrack[j]].init(frame, rect2bbox(rect))
+                    # 十分に重なっていて検出結果で追跡を置き換える。
+                    print librect.rect2bbox(rect), "# rect2bbox(rect)"
+                    ok = trackers[asTrack[j]].init(frame, librect.rect2bbox(rect))
                     left, top, w, h = rect
                     right, bottom = left+w, top+h
                     det = dlib.rectangle(left, top, right, bottom)
                     shape = predictor(frame, det)
                     frame = draw_landmarks(frame, shape)
+                    [left, right, top, bottom] = [det.left(), det.right(), det.top(), det.bottom()]
                 elif alreadyFounds[j] < 0.5 - 0.1:
+                    # 対応する追跡がないとして、新規の検出にする。
                     tracker = TrackerWithState(tracker_type)
-                    ok = tracker.init(frame, rect2bbox(rects[j]))
+                    ok = tracker.init(frame, librect.rect2bbox(rects[j]))
                     trackers.append(tracker)
                     print "new tracking"
-                    print rect2bbox(rect), "# rect2bbox(rect) new tracking"
+                    print librect.rect2bbox(rect), "# rect2bbox(rect) new tracking"
                     left, top, w, h = rects[j]
                     right, bottom = left+w, top+h
                     det = dlib.rectangle(left, top, right, bottom)
                     shape = predictor(frame, det)
                 else:
-                    continue
+                    [left, right, top, bottom] = [det.left(), det.right(), det.top(), det.bottom()]
 
-                if doCrop:
-                    subImg = frameCopy[top:bottom, left:right, :]
-
-                    datetimestring = time.strftime("%Y%m%d_%H%M%S", time.localtime())
-                    cropName = os.path.join(cropDir, "%s.png" % datetimestring)
-                    cv2.imwrite(cropName, subImg)
-
-                    nx, ny, nw, nh = expandRegion(rect, rate=2.0)
-                    nleft, ntop, nright, nbottom = nx, ny, nx+nw, ny+nh
-                    assert ntop < nbottom
-                    assert nleft < nright
-
-                    subImg3 = sizedCrop(frameCopy, (nleft, ntop, nright, nbottom))
-                    cropName3 = os.path.join(cropDir, "%s_b.png" % datetimestring)
-                    cv2.imwrite(cropName3, subImg3)
-
-
-                if 1:
-                    image = dlib.get_face_chip(frameCopy, shape, size=320, padding=0.5)
-                    image = np.array(image, dtype=np.uint8)
-                    cv2.imshow('image', image)
-                    cv2.waitKey(10)
 
         cv2.putText(frame, tracker_type + " Tracker", (100, 20), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (50, 170, 50), 2);
-
         cv2.putText(frame, "# of Trackers = %d" % len(trackers), (100, 400), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (50, 170, 50), 2);
 
 
