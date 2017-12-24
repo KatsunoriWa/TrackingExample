@@ -7,6 +7,13 @@ import cv2
 import caffe
 
 def retifyxxyy(img, xxyy):
+    """
+    let xxyy within image size
+    img: image
+    xxyy: left, right, top, bottom
+    return modified xxyy
+    """
+
     img_height, img_width = img.shape[:2]
     xxyy = retifyxxyysize(img_height, img_width, xxyy)
     return xxyy
@@ -16,6 +23,7 @@ def retifyxxyysize(img_height, img_width, xxyy):
     img_height:
     img_width:
     xxyy:
+    return xxyy
     """
 
     xxyy[0] = max(xxyy[0], 0)
@@ -96,6 +104,11 @@ class FacePosePredictor(object):
         predcit pitch yaw, roll for each rectangle.
         colorImage:
         xxyys: list of rectangle
+
+        return
+        predictpoints: 68 point
+        landmarks:
+        predictposes: pitch yaw roll
         """
 
 
@@ -144,6 +157,7 @@ class FacePosePredictor(object):
         predictpoints = predictpoints * self.vgg_height/2 + self.vgg_width/2
         landmarks = self.batchRecoverPart(predictpoints, xxyys, TotalSize, self.M_left, self.M_right, self.M_top, self.M_bottom, self.vgg_height, self.vgg_width)
 
+
         return predictpoints, landmarks, predictposes
 
     def batchRecoverPart(self, predictPoint, totalxxyy, totalSize, left, right, top, bottom, height, width):
@@ -176,6 +190,10 @@ class FacePosePredictor(object):
         predcit pitch yaw, roll for single rectangle.
         colorImage:
         xxyy: single rectangle
+
+        return value
+        predictposes[0, :] : pitch, yaw, roll
+
         """
         predictpoints, landmarks, predictposes = self.predict(colorImage, np.array([xxyy]))
 
