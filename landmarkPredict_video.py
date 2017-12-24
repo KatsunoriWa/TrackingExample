@@ -28,10 +28,10 @@ def show_image(img, landmarks, bboxs, headposes):
     landmarks: landmark points
     bboxs: dlibの顔検出枠を bounding box としたもののリスト
     headposes:
-        headposes[0, :]: 0番目の顔のpitch, yaw, row 
+        headposes[0, :]: 0番目の顔のpitch, yaw, row
         pitchの値が大きくなると　顎を引いた画像、あるいは上から見下ろした画像になる。
         yawの値が大きくなると　顔向きが画像上の左側を向くようになる。
-        rollの値が大きくなると　　顔が時計まわりに傾いた画像になる。 
+        rollの値が大きくなると　　顔が時計まわりに傾いた画像になる。
     """
 
     orgImg = img+0
@@ -51,7 +51,7 @@ def show_image(img, landmarks, bboxs, headposes):
 
         for i in range(0, landmarks.shape[1]/2):
             cv2.circle(img, (int(round(landmarks[faceNum, i*2])), int(round(landmarks[faceNum, i*2+1]))), 1, (0, 255, 0), 2)
-            
+
         pitch = headposes[faceNum, 0]
         yaw = headposes[faceNum, 1]
         roll = headposes[faceNum, 2]
@@ -63,8 +63,8 @@ def show_image(img, landmarks, bboxs, headposes):
         for p in (cropPyDir, outPyDir):
             if not os.path.isdir(p):
                 os.makedirs(p)
-                
-        left, right,  top, bottom = bboxs[faceNum, :]
+
+        left, right, top, bottom = bboxs[faceNum, :]
         rect = [left, top, right-left, bottom - top]
         nx, ny, nw, nh = librect.expandRegion(rect, rate=2.0)
         nleft, ntop, nright, nbottom = nx, ny, nx+nw, ny+nh
@@ -76,7 +76,7 @@ def show_image(img, landmarks, bboxs, headposes):
         subImg3 = librect.sizedCrop(orgImg, (nleft, ntop, nright, nbottom))
         cropName3 = os.path.join(cropPyDir, "%s_%s_b.png" % (pyrStr, datetimeStr))
         cv2.imwrite(cropName3, subImg3)
-        
+
 
         pngname = os.path.join(outPyDir, "%s_%s.jpg" % (pyrStr, datetimeStr))
         cv2.imwrite(pngname, orgImg)
@@ -121,10 +121,24 @@ def predictVideo(uvcID):
             continue
 
         numUpSampling = 0
+        t0 = cv2.getTickCount()
+
         dets, scores, idx = detector.run(colorImage, numUpSampling)
         bboxs = facePose.dets2xxyys(dets)
 
+
+        t1 = cv2.getTickCount()
+
         predictpoints, landmarks, predictpose = posePredictor.predict(colorImage, bboxs)
+
+        t2 = cv2.getTickCount()
+
+        used0 = 1000*(t1-t0)/cv2.getTickFrequency()
+        used1 = 1000*(t2-t1)/cv2.getTickFrequency()
+
+        cv2.putText(colorImage, "detect used %f [ms]" % used0, (100, 40), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0, 255, 0), 2)
+        cv2.putText(colorImage, "pose used %f [ms]" % used1, (100, 80), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0, 255, 0), 2)
+
 
         show_image(colorImage, landmarks, bboxs, predictpose)
 
