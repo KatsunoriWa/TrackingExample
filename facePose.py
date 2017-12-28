@@ -57,8 +57,6 @@ def getCutSize(xxyy, left, right, top, bottom):   #left, right, top, and bottom
     return cut_size
 
 
-
-
 def dets2xxyys(dets):
     """
     In this module
@@ -76,6 +74,17 @@ def dets2xxyys(dets):
 class FacePosePredictor(object):
     """
     A face Pose Predcitor using pre-trained caffe model.
+
+    The orignal code was modified to class version.
+
+    https://github.com/guozhongluo/head-pose-estimation-and-face-landmark
+
+Example:
+
+    posePredictor = facePose.FacePosePredictor()
+    predictpoints, landmarks, headposes = posePredictor.predict(frameCopy, np.array([[left, right, top, bottom]]))
+
+
     """
 
     def __init__(self):
