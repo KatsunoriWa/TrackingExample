@@ -1,17 +1,21 @@
 # TrackingExample
 Tracking example code using OpenCV Tracker class in python.
 
-# Requirement
+## Requirement
 - Python 2.7
 - OpenCV3.x
 - dlib
 
-# usage:
+## usage:
 
 dlib face detection version
+
 ```
-$ python tracker_dlib.py
-usage:tracker_dlib.py [moviefile | uvcID]
+$ ./tracker_dlib.py
+usage:./tracker_dlib.py  [--crop] (moviefile | uvcID)
+--crop: enable crop
+--align: enable aligne
+--saveFull: save full image
 
 $
 $ python tracker_dlib.py 0
@@ -29,3 +33,6 @@ $
 $ python tracker.py 0
 $
 ```
+
+## Note
+ This code is not useful because face detection is not fast enough.
