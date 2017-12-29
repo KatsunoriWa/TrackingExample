@@ -4,6 +4,56 @@
 import numpy as np
 import PIL.Image
 
+u"""
+module for rectangles
+
+- Type1: cv::Rect(x, y, w, h)
+に対応するもの
+
+cv2.CascadeClassifier.detectMultiScale()
+の戻り値は、[x,y,w,h]のリストになる。
+
+x,y,w,h = cv2.boundingRect(cnt)
+
+rect = matplotlib.patches.Rectangle((d.left(), d.top()), d.width(), d.height())
+
+
+OpenCV の場合、bounding box という表現をしていても [x, y, w, h]
+の意味である。
+
+bbox = (287, 23, 86, 320)
+tracker = cv2.TrackerKCF_create()
+tracker.init(frame, bbox)
+
+
+- type2:  box
+
+PIL.Image.crop(box=None)
+	box – The crop rectangle, as a (left, upper, right, lower)-tuple.
+
+
+- type3: dlibのオブジェクト検出値の戻り値
+
+d.left()
+d.top()
+d.right()
+d.bottom()
+
+次のような記述が可能
+[d.left(), d.top(), d.right()-d.left(), d.bottom()-d.top()] for d in dets
+
+http://dlib.net/python/index.html#dlib.rectangle
+
+http://dlib.net/python/index.html#dlib.rectangles
+
+http://dlib.net/python/index.html#dlib.drectangle
+
+http://dlib.net/python/index.html#dlib.full_object_detections
+
+http://dlib.net/python/index.html#dlib.full_object_detection
+
+"""
+
 def largestRect(rects):
     u"""retturn largest rect in rects
     rects: list of rect
