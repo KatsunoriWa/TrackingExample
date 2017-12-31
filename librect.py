@@ -62,9 +62,13 @@ def largestRect(rects):
     if len(rects) < 2:
         return rects
 
+    def area(rect):
+        x, y, w, h = rect
+        return w*h
+
     largest = rects[0]
     for i in range(1, len(rects)):
-        if rects[i][2] > largest[2]:
+        if area(rects[i]) > area(largest[2]):
             largest = rects[i]
 
     return largest
@@ -163,8 +167,10 @@ def test_getIoU():
 
 
 def rect2bbox(rect):
-    """convert rect into bbox.
+    u"""convert rect into bbox.
     tracker.init() need this data type.
+
+    rectAsLong()のような名前の方がよいだろうか
     """
 
     assert len(rect) == 4
@@ -211,6 +217,7 @@ def expandRegion(rect, rate):
     """expand rectange x,y,w,h keeping center postion.
     rect: x,y,w,h
     rate
+    expandRect()の方がいいか
     """
 
     x, y, w, h = rect
