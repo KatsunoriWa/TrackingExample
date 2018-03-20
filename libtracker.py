@@ -135,7 +135,7 @@ if __name__ == '__main__':
     print rects
 
     tracker_types = ['BOOSTING', 'MIL', 'KCF', 'TLD', 'MEDIANFLOW', 'GOTURN']
-    tracker_type = tracker_types[2]
+    tracker_type = tracker_types[4]
 
     trackers = range(len(rects))
 
