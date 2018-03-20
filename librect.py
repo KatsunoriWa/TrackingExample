@@ -15,6 +15,10 @@ cv2.CascadeClassifier.detectMultiScale()
 
 x,y,w,h = cv2.boundingRect(cnt)
 
+
+cv2.rectangle(img,(left,top),(right,bottom),(0,255,0),3)
+
+
 rect = matplotlib.patches.Rectangle((d.left(), d.top()), d.width(), d.height())
 
 
@@ -51,6 +55,15 @@ http://dlib.net/python/index.html#dlib.drectangle
 http://dlib.net/python/index.html#dlib.full_object_detections
 
 http://dlib.net/python/index.html#dlib.full_object_detection
+
+Deep learningの顔検出の検出後のw, h は同じ値となっていないことに注意。
+
+
+
+PIL.ImageDraw.Draw.rectangle(xy, fill=None, outline=None)
+xy – Four points to define the bounding box. Sequence of either [(x0, y0), (x1, y1)] or [x0, y0, x1, y1]. The second point is just outside the drawn rectangle.
+
+
 
 """
 
