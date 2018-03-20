@@ -121,7 +121,7 @@ if __name__ == '__main__':
 
     counter = 0
 
-    interval = 1
+    interval = 4
 
     color = {True:(0, 0, 255), False:(255, 0, 0)}
     while True:
