@@ -121,11 +121,6 @@ if __name__ == '__main__':
         print 'Cannot read video file'
         sys.exit()
 
-    librect.test_overlapRegion()
-    librect.test_getIoU()
-
-    predictor_path = "./shape_predictor_68_face_landmarks.dat"
-    predictor = dlib.shape_predictor(predictor_path)
 
     #<haar>
     cascade_path = "haarcascade_frontalface_alt.xml"
@@ -152,7 +147,6 @@ if __name__ == '__main__':
 
     interval = 20
 
-
     color = {True:(0, 0, 255), False:(255, 0, 0)}
     while True:
         ok, frame = video.read()
@@ -178,14 +172,10 @@ if __name__ == '__main__':
 
                 left, top, w, h = bbox
                 right, bottom = left+w, top+h
-#                det = dlib.rectangle(long(left), long(top), long(right), long(bottom))
-#                shape = predictor(frame, det)
-#                frame = draw_landmarks(frame, shape)
 
             else:
                 del trackers[i]
                 print """del trackers["%d"] """ % i
-                cv2.putText(frame, "Tracking failure detected", (100, 80), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0, 0, 255), 2)
 
         if doDetect:
             usedDetector = 0
@@ -210,9 +200,6 @@ if __name__ == '__main__':
                     ok = trackers[asTrack[j]].init(frame, librect.rect2bbox(rect))
                     left, top, w, h = rect
                     right, bottom = left+w, top+h
-#                    det = dlib.rectangle(long(left), long(top), long(right), long(bottom))
-#                    shape = predictor(frame, det)
-#                    frame = draw_landmarks(frame, shape)
                 elif alreadyFounds[j] < 0.5 - 0.1:
                     tracker = TrackerWithState(tracker_type)
                     ok = tracker.init(frame, librect.rect2bbox(rects[j]))
@@ -220,9 +207,6 @@ if __name__ == '__main__':
                     print "new tracking"
                     print librect.rect2bbox(rect), "# rect2bbox(rect) new tracking"
                     left, top, w, h = rects[j]
-#                    right, bottom = left+w, top+h
-#                    det = dlib.rectangle(left, top, right, bottom)
-#                    shape = predictor(frame, det)
                 else:
                     continue
 
@@ -232,7 +216,6 @@ if __name__ == '__main__':
             cv2.putText(frame, "no detect frame: used %.3f" % usedTracker, (100, 80), cv2.FONT_HERSHEY_SIMPLEX, 0.75, color[doDetect], 2)
 
         cv2.putText(frame, tracker_type + " Tracker", (100, 20), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (50, 170, 50), 2);
-
         cv2.putText(frame, "# of Trackers = %d" % len(trackers), (100, 400), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (50, 170, 50), 2);
 
         cv2.namedWindow("Tracking q:quit", cv2.WINDOW_NORMAL)
