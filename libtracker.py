@@ -163,10 +163,14 @@ if __name__ == '__main__':
 
         indexes = range(len(trackers))
         indexes.reverse()
+
+        usedTracker = 0
         for i in indexes:
-            tracker = trackers[i]
             #  追跡する。
-            trackOk, bbox = tracker.update(frame)
+            t0 = cv2.getTickCount()
+            trackOk, bbox = trackers[i].update(frame)
+            t1 = cv2.getTickCount()
+            usedTracker += (t1-t0)/cv2.getTickFrequency()
             if trackOk:            # Tracking success
                 p1 = (int(bbox[0]), int(bbox[1]))
                 p2 = (int(bbox[0] + bbox[2]), int(bbox[1] + bbox[3]))
@@ -178,19 +182,20 @@ if __name__ == '__main__':
 #                shape = predictor(frame, det)
 #                frame = draw_landmarks(frame, shape)
 
-                if doDetect:
-                    cv2.putText(frame, "detect  frame", (100, 80), cv2.FONT_HERSHEY_SIMPLEX, 0.75, color[doDetect], 2)
-                else:
-                    cv2.putText(frame, "no detect  frame", (100, 80), cv2.FONT_HERSHEY_SIMPLEX, 0.75, color[doDetect], 2)
             else:
                 del trackers[i]
                 print """del trackers["%d"] """ % i
                 cv2.putText(frame, "Tracking failure detected", (100, 80), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0, 0, 255), 2)
 
         if doDetect:
+            usedDetector = 0
+            t0 = cv2.getTickCount()
+
             #<haar>
             rects = cascade.detectMultiScale(frame, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
             #</haar>
+            t1 = cv2.getTickCount()
+            usedDetector += (t1-t0)/cv2.getTickFrequency()
 
             # どれかの検出に重なっているかを調べる。
             # 一番重なりがよいのを見つける。
@@ -220,6 +225,11 @@ if __name__ == '__main__':
 #                    shape = predictor(frame, det)
                 else:
                     continue
+
+        if doDetect:
+            cv2.putText(frame, "   detect frame: used %.3f"  % usedDetector, (100, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.75, color[doDetect], 2)
+        else:
+            cv2.putText(frame, "no detect frame: used %.3f" % usedTracker, (100, 80), cv2.FONT_HERSHEY_SIMPLEX, 0.75, color[doDetect], 2)
 
         cv2.putText(frame, tracker_type + " Tracker", (100, 20), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (50, 170, 50), 2);
 
