@@ -54,6 +54,7 @@ if __name__ == '__main__':
 --align: enable aligne
 --saveFull: save full image
         """ % sys.argv[0])
+        print("cv2.__version__", cv2.__version__)
         sys.exit()
 
 
