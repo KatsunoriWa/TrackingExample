@@ -1,6 +1,9 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 # pylint: disable=C0103
+# Python 2/3 compatibility
+from __future__ import print_function
+
 import sys
 import os
 import cv2
@@ -102,8 +105,8 @@ def draw_landmarks(frame, shape):
 
 if __name__ == '__main__':
     if len(sys.argv) == 1:
-        print """usage:%s [moviefile | uvcID]
-        """ % sys.argv[0]
+        print("""usage:%s [moviefile | uvcID]
+        """ % sys.argv[0])
         sys.exit()
 
     try:
@@ -113,26 +116,26 @@ if __name__ == '__main__':
         video = cv2.VideoCapture(sys.argv[1])
 
     if not video.isOpened():
-        print "Could not open video"
+        print("Could not open video")
         sys.exit()
 
     ok, frame = video.read()
     if not ok:
-        print 'Cannot read video file'
+        print('Cannot read video file')
         sys.exit()
 
 
     #<haar>
     cascade_path = "haarcascade_frontalface_alt.xml"
     if not os.path.isfile(cascade_path):
-        print "be sure to get ready for %s" % os.path.basename(cascade_path)
+        print("be sure to get ready for %s" % os.path.basename(cascade_path))
         sys.exit()
 
     cascade = cv2.CascadeClassifier(cascade_path)
     rects = cascade.detectMultiScale(frame, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
     #</haar>
 
-    print rects
+    print(rects)
 
     tracker_types = ['BOOSTING', 'MIL', 'KCF', 'TLD', 'MEDIANFLOW', 'GOTURN']
     tracker_type = tracker_types[4]
@@ -175,7 +178,7 @@ if __name__ == '__main__':
 
             else:
                 del trackers[i]
-                print """del trackers["%d"] """ % i
+                print("""del trackers["%d"] """ % i)
 
         if doDetect:
             usedDetector = 0
@@ -196,7 +199,7 @@ if __name__ == '__main__':
 
             for j, rect in enumerate(rects):# 検出について
                 if alreadyFounds[j] > 0.5:
-                    print librect.rect2bbox(rect), "# rect2bbox(rect)"
+                    print(librect.rect2bbox(rect), "# rect2bbox(rect)")
                     ok = trackers[asTrack[j]].init(frame, librect.rect2bbox(rect))
                     left, top, w, h = rect
                     right, bottom = left+w, top+h
@@ -204,8 +207,8 @@ if __name__ == '__main__':
                     tracker = TrackerWithState(tracker_type)
                     ok = tracker.init(frame, librect.rect2bbox(rects[j]))
                     trackers.append(tracker)
-                    print "new tracking"
-                    print librect.rect2bbox(rect), "# rect2bbox(rect) new tracking"
+                    print("new tracking")
+                    print(librect.rect2bbox(rect), "# rect2bbox(rect) new tracking")
                     left, top, w, h = rects[j]
                 else:
                     continue
