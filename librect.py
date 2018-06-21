@@ -1,6 +1,9 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 # pylint: disable=C0103
+# Python 2/3 compatibility
+from __future__ import print_function
+
 import numpy as np
 import PIL.Image
 
@@ -165,16 +168,16 @@ def getIoU(rect1, rect2):
 
 def test_getIoU():
     IoU = getIoU([10, 20, 30, 40], [10, 20, 30, 40])
-    print IoU
+    print(IoU)
     assert IoU == 1.0
 
     IoU = getIoU([10, 20, 30, 40], [10, 20, 30, 20])
-    print IoU
+    print(IoU)
     assert IoU <= 0.5+0.01
     assert 0.5 - 0.01 <= IoU
 
     IoU = getIoU([10, 20, 30, 40], [10, 25, 30, 40])
-    print IoU
+    print(IoU)
     assert IoU < 1.0
     assert IoU >= 0.0
 

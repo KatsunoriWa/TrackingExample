@@ -52,7 +52,7 @@ class TrackerWithState(object):
         """
         (major_ver, minor_ver, subminor_ver) = (cv2.__version__).split(".")
 
-        if int(minor_ver) < 3:
+        if major_ver == 3 and int(minor_ver) < 3:
             tracker = cv2.Tracker_create(tracker_type)
         else:
             if tracker_type == 'BOOSTING':
