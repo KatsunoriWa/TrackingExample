@@ -1,6 +1,8 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 # pylint: disable=C0103
+# Python 2/3 compatibility
+from __future__ import print_function
 import sys
 import os
 import time
@@ -47,11 +49,11 @@ if __name__ == '__main__':
     import getopt
     optlist, sys.argv[1:] = getopt.getopt(sys.argv[1:], '', ['crop', 'align', 'saveFull'])
     if len(sys.argv) == 1:
-        print """usage:%s  [--crop] (moviefile | uvcID)
+        print("""usage:%s  [--crop] (moviefile | uvcID)
 --crop: enable crop
 --align: enable aligne
 --saveFull: save full image
-        """ % sys.argv[0]
+        """ % sys.argv[0])
         sys.exit()
 
 
@@ -62,7 +64,7 @@ if __name__ == '__main__':
         video = cv2.VideoCapture(sys.argv[1])
 
     if not video.isOpened():
-        print "Could not open video"
+        print("Could not open video")
         sys.exit()
 
     doCrop = False
@@ -89,7 +91,7 @@ if __name__ == '__main__':
 
     ok, frame = video.read()
     if not ok:
-        print 'Cannot read video file'
+        print('Cannot read video file')
         sys.exit()
 
     librect.test_overlapRegion()
@@ -108,7 +110,7 @@ if __name__ == '__main__':
     rects = librect.dets2rects(dets)
     #</dlib>
 
-    print rects
+    print(rects)
 
     tracker_types = ['BOOSTING', 'MIL', 'KCF', 'TLD', 'MEDIANFLOW', 'GOTURN']
     tracker_type = tracker_types[2]
@@ -153,7 +155,7 @@ if __name__ == '__main__':
                 cv2.putText(frame, stateStr[doDetect], (100, 80), cv2.FONT_HERSHEY_SIMPLEX, 0.75, color[doDetect], 2)
             else:
                 del trackers[i]
-                print """del trackers["%d"] """ % i
+                print("""del trackers["%d"] """ % i)
                 cv2.putText(frame, "Tracking failure detected", (100, 80), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0, 0, 255), 2)
                 continue
 
@@ -166,8 +168,8 @@ if __name__ == '__main__':
 
                 cropPyrDir = facePose.getPyrDir(cropDir, pitch, yaw, roll)
 
-                print pitch, yaw, roll, "# pitch, yaw, roll"
-                print cropPyrDir
+                print(pitch, yaw, roll, "# pitch, yaw, roll")
+                print(cropPyrDir)
 
                 subImg = frameCopy[int(top):int(bottom), int(left):int(right), :]
 
@@ -181,7 +183,7 @@ if __name__ == '__main__':
                 subImg3 = librect.sizedCrop(frameCopy, (nleft, ntop, nright, nbottom))
                 cropName3 = os.path.join(cropPyrDir, "%s_b.png" % datetimestring)
                 cv2.imwrite(cropName3, subImg3)
-                print  cropName3
+                print(cropName3)
 
             if doAlign:
                 alignedImg = dlib.get_face_chip(frameCopy, shape, size=320, padding=0.5)
@@ -189,7 +191,7 @@ if __name__ == '__main__':
                 cv2.imshow('alignedImg', alignedImg)
                 cropName4 = os.path.join(cropPyrDir, "%s_aligned.png" % datetimestring)
                 cv2.imwrite(cropName4, alignedImg)
-                print cropName4
+                print(cropName4)
                 k = cv2.waitKey(1) & 0xff
                 if k == ord('q') or k == 27:
                     break
@@ -210,7 +212,7 @@ if __name__ == '__main__':
                     break
 
             rects = librect.dets2rects(dets)
-            print rects, scores, idx
+            print(rects, scores, idx)
             #</dlib>
 
             # どれかの検出に重なっているかを調べる。
@@ -223,7 +225,7 @@ if __name__ == '__main__':
             for j, rect in enumerate(rects):# 検出について
                 if alreadyFounds[j] > 0.5:
                     # 十分に重なっていて検出結果で追跡を置き換える。
-                    print librect.rect2bbox(rect), "# rect2bbox(rect)"
+                    print(librect.rect2bbox(rect), "# rect2bbox(rect)")
                     ok = trackers[asTrack[j]].init(frame, librect.rect2bbox(rect))
                     left, top, w, h = rect
                     right, bottom = left+w, top+h
@@ -236,8 +238,8 @@ if __name__ == '__main__':
                     tracker = libtracker.TrackerWithState(tracker_type)
                     ok = tracker.init(frame, librect.rect2bbox(rects[j]))
                     trackers.append(tracker)
-                    print "new tracking"
-                    print librect.rect2bbox(rect), "# rect2bbox(rect) new tracking"
+                    print("new tracking")
+                    print(librect.rect2bbox(rect), "# rect2bbox(rect) new tracking")
                     left, top, w, h = rects[j]
                     right, bottom = left+w, top+h
                     det = dlib.rectangle(left, top, right, bottom)
