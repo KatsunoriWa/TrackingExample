@@ -109,7 +109,7 @@ class HaarCascadeDetector(object):
     	 if not os.path.isfile(cascade_path):
     	     print("be sure to get ready for %s" % os.path.basename(cascade_path))
          sys.exit()
-    
+
          self.face_cascade = cv2.CascadeClassifier(cascade_path)
          self.scaleFactor = scaleFactor
          self.minNeightbors = minNeightbors
@@ -117,6 +117,17 @@ class HaarCascadeDetector(object):
     def run(self, frame):
          dets = self.face_cascade.detectMultiScale(frame, self.scaleFactor, self.minNeightbors)
          return dets, "noScore", "noIdx"
+
+class DlibFrontalDetector(object):
+    def __init__(self, numUpSampling=1):
+        self.detector = dlib.get_frontal_face_detector()
+        self.numUpSampling = numUpSampling
+
+    def run(self, frame):
+        dets = self.detector(frame, self.numUpSampling)
+        rects = librect.dets2rects(dets)
+        return rects, None, None
+
 
 if __name__ == '__main__':
     if len(sys.argv) == 1:
@@ -141,8 +152,11 @@ if __name__ == '__main__':
         sys.exit()
 
 #    detector = HaarCascadeDetector()
-    confThreshold = 0.5
-    detector = ResnetFaceDetector(confThreshold)
+
+#    confThreshold = 0.5
+#    detector = ResnetFaceDetector(confThreshold)
+
+    detector = DlibFrontalDetector()
     rects, _, _ = detector.run(frame)
 
     #</haar>
