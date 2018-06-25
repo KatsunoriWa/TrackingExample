@@ -131,14 +131,66 @@ class DlibFrontalDetector(object):
         return rects, None, None
 
 #class MovieTracker(MovieProcessor):
+import time
 
+#def setVideoIO(src, outDir):
+#    """
+#    src: movie file name or cameraID
+#    """
+#
+#    def timeStr():
+#        return time.strftime("%Y%m%d_%H%M%S", time.localtime())
+#
+#    if os.path.isfile(src):
+#        base = os.path.splitext(os.path.basename(src))[0]
+#        cap = cv2.VideoCapture(src)
+#    else:
+#        base = "%s" % timeStr()
+#        cap = cv2.VideoCapture(int(src))
+#
+#    if not outDir:
+#        outname = ""
+#
+#    if not os.path.isdir(outDir):
+#        os.mkdir(outDir)
+#
+#    outname = os.path.join(outDir, "%s_out.avi" % base)
+#    writer = cv2.VideoWriter()
+#
+#    return cap, writer
+
+
+def getCapAndbase(src):
+    """
+    src: movie file name or cameraID
+    """
+
+    def timeStr():
+        return time.strftime("%Y%m%d_%H%M%S", time.localtime())
+
+    if os.path.isfile(src):
+        base = os.path.splitext(os.path.basename(src))[0]
+        cap = cv2.VideoCapture(src)
+    else:
+        base = "%s" % timeStr()
+        cap = cv2.VideoCapture(int(src))
+
+    return cap, base
+
+def getOutname(base, outDir=""):
+    if not outDir:
+        outname = ""
+        return outname
+
+    if not os.path.isdir(outDir):
+        os.mkdir(outDir)
+
+    outname = os.path.join(outDir, "%s_out.avi" % base)
+    return outname
 
 def main(src):
-    try:
-        num = int(src)
-        video = cv2.VideoCapture(num)
-    except:
-        video = cv2.VideoCapture(src)
+
+    video, base = getCapAndbase(src)
 
     if not video.isOpened():
         print("Could not open video")
@@ -149,10 +201,23 @@ def main(src):
         print('Cannot read video file')
         sys.exit()
 
-#    detector = HaarCascadeDetector()
+    detectorType = "resnetSSD"
 
-    confThreshold = 0.5
-    detector = ResnetFaceDetector(confThreshold)
+    if detectorType == "Haar":
+        detector = HaarCascadeDetector()
+    elif detectorType == "dlib":
+        detector = DlibFrontalDetector()
+    elif detectorType == "resnetSSD":
+        confThreshold = 0.5
+        detector = ResnetFaceDetector(confThreshold)
+    else:
+        print("no such detector")
+        exit()
+
+
+    aviname = getOutname(base, outDir="../track_result")
+    vout = None
+
 
     tracker_types = ['BOOSTING', 'MIL', 'KCF', 'TLD', 'MEDIANFLOW', 'GOTURN']
     tracker_type = tracker_types[4]
@@ -167,6 +232,18 @@ def main(src):
         ok, frame = video.read()
         if not ok:
             break
+
+        cols = frame.shape[1]
+        rows = frame.shape[0]
+
+        if aviname:
+            if vout is None:
+                FRAME_RATE = 30
+                vout = cv2.VideoWriter(aviname, \
+                              cv2.VideoWriter_fourcc(*'MJPG'), \
+                              FRAME_RATE, \
+                              (cols, rows))
+
 
         doDetect = (counter % interval == 0)
 
@@ -237,6 +314,7 @@ def main(src):
 
         cv2.namedWindow("Tracking q:quit", cv2.WINDOW_NORMAL)
         cv2.imshow("Tracking q:quit", frame)
+        vout.write(frame)
         counter += 1
         k = cv2.waitKey(1) & 0xff
         if k == ord('q') or k == 27:
@@ -244,6 +322,7 @@ def main(src):
 
     cv2.destroyAllWindows()
     video.release()
+    vout.release()
 
 if __name__ == '__main__':
     if len(sys.argv) == 1:
