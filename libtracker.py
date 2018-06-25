@@ -141,9 +141,9 @@ if __name__ == '__main__':
         sys.exit()
 
 #    detector = HaarCascadeDetector()
-    detector = ResnetFaceDetector()
     confThreshold = 0.5
-    rects, _, _ = detector.run(frame, confThreshold)
+    detector = ResnetFaceDetector(confThreshold)
+    rects, _, _ = detector.run(frame)
 
     #</haar>
 
@@ -198,7 +198,7 @@ if __name__ == '__main__':
 
             #<haar>
 #            rects = cascade.detectMultiScale(frame, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
-            rects, _, _ = detector.run(frame, confThreshold)
+            rects, _, _ = detector.run(frame)
 
             #</haar>
             t1 = cv2.getTickCount()
