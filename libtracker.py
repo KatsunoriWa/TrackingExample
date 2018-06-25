@@ -11,6 +11,8 @@ import dlib
 import librect
 from resnetFaceDetector import ResnetFaceDetector
 
+from MovieProcessor import MovieProcessor
+
 class TrackerWithState(object):
     """
     tracker
@@ -128,19 +130,15 @@ class DlibFrontalDetector(object):
         rects = librect.dets2rects(dets)
         return rects, None, None
 
+#class MovieTracker(MovieProcessor):
 
-if __name__ == '__main__':
-    if len(sys.argv) == 1:
-        print("""usage:%s [moviefile | uvcID]
-        """ % sys.argv[0])
-        print("cv2.__version__", cv2.__version__)
-        sys.exit()
 
+def main(src):
     try:
-        num = int(sys.argv[1])
+        num = int(src)
         video = cv2.VideoCapture(num)
     except:
-        video = cv2.VideoCapture(sys.argv[1])
+        video = cv2.VideoCapture(src)
 
     if not video.isOpened():
         print("Could not open video")
@@ -153,25 +151,13 @@ if __name__ == '__main__':
 
 #    detector = HaarCascadeDetector()
 
-#    confThreshold = 0.5
-#    detector = ResnetFaceDetector(confThreshold)
-
-    detector = DlibFrontalDetector()
-    rects, _, _ = detector.run(frame)
-
-    #</haar>
-
-    print(rects)
+    confThreshold = 0.5
+    detector = ResnetFaceDetector(confThreshold)
 
     tracker_types = ['BOOSTING', 'MIL', 'KCF', 'TLD', 'MEDIANFLOW', 'GOTURN']
     tracker_type = tracker_types[4]
 
-    trackers = range(len(rects))
-
-    for i, rect in enumerate(rects):
-        trackers[i] = TrackerWithState(tracker_type)
-        ok = trackers[i].init(frame, tuple(rects[i]))
-
+    trackers = []
     counter = 0
 
     interval = 20
@@ -182,7 +168,7 @@ if __name__ == '__main__':
         if not ok:
             break
 
-        doDetect = (counter % interval == interval - 1)
+        doDetect = (counter % interval == 0)
 
         indexes = range(len(trackers))
         indexes.reverse()
@@ -258,3 +244,12 @@ if __name__ == '__main__':
 
     cv2.destroyAllWindows()
     video.release()
+
+if __name__ == '__main__':
+    if len(sys.argv) == 1:
+        print("""usage:%s [moviefile | uvcID]
+        """ % sys.argv[0])
+        print("cv2.__version__", cv2.__version__)
+        sys.exit()
+
+    main(sys.argv[1])
