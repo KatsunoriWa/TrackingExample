@@ -6,12 +6,12 @@ from __future__ import print_function
 
 import sys
 import os
+import time
 import cv2
 import dlib
-import librect
-from resnetFaceDetector import ResnetFaceDetector
+import librect # GX
+from resnetFaceDetector import ResnetFaceDetector # GX
 
-from MovieProcessor import MovieProcessor
 
 class TrackerWithState(object):
     """
@@ -130,34 +130,7 @@ class DlibFrontalDetector(object):
         rects = librect.dets2rects(dets)
         return rects, None, None
 
-#class MovieTracker(MovieProcessor):
-import time
 
-#def setVideoIO(src, outDir):
-#    """
-#    src: movie file name or cameraID
-#    """
-#
-#    def timeStr():
-#        return time.strftime("%Y%m%d_%H%M%S", time.localtime())
-#
-#    if os.path.isfile(src):
-#        base = os.path.splitext(os.path.basename(src))[0]
-#        cap = cv2.VideoCapture(src)
-#    else:
-#        base = "%s" % timeStr()
-#        cap = cv2.VideoCapture(int(src))
-#
-#    if not outDir:
-#        outname = ""
-#
-#    if not os.path.isdir(outDir):
-#        os.mkdir(outDir)
-#
-#    outname = os.path.join(outDir, "%s_out.avi" % base)
-#    writer = cv2.VideoWriter()
-#
-#    return cap, writer
 
 
 def getCapAndbase(src):
