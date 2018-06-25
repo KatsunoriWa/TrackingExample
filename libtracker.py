@@ -9,6 +9,7 @@ import os
 import cv2
 import dlib
 import librect
+from resnetFaceDetector import ResnetFaceDetector
 
 class TrackerWithState(object):
     """
@@ -144,8 +145,10 @@ if __name__ == '__main__':
 #    rects = cascade.detectMultiScale(frame, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
 
 
-    detector = HaarCascadeDetector()
-    rects, _, _ = detector.run(frame)
+#    detector = HaarCascadeDetector()
+    detector = ResnetFaceDetector()
+    confThreshold = 0.5
+    rects, _, _ = detector.run(frame, confThreshold)
 
     #</haar>
 
@@ -200,7 +203,7 @@ if __name__ == '__main__':
 
             #<haar>
 #            rects = cascade.detectMultiScale(frame, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
-            rects, _, _ = detector.run(frame)
+            rects, _, _ = detector.run(frame, confThreshold)
 
             #</haar>
             t1 = cv2.getTickCount()
