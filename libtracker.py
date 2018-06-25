@@ -105,12 +105,18 @@ def draw_landmarks(frame, shape):
     return frame
 
 class HaarCascadeDetector(object):
-    def __init__(self):
-		self.face_cascade = cv2.CascadeClassifier('haarcascade_frontalface_default.xml')
+    def __init__(self, cascade_path='haarcascade_frontalface_default.xml', scaleFactor=1.1, minNeightbors=5):
+    	 if not os.path.isfile(cascade_path):
+    	     print("be sure to get ready for %s" % os.path.basename(cascade_path))
+         sys.exit()
+    
+         self.face_cascade = cv2.CascadeClassifier(cascade_path)
+         self.scaleFactor = scaleFactor
+         self.minNeightbors = minNeightbors
 
     def run(self, frame):
-        dets = self.face_cascade.detectMultiScale(frame, 1.1, 5)
-        return dets, "noScore", "noIdx"
+         dets = self.face_cascade.detectMultiScale(frame, self.scaleFactor, self.minNeightbors)
+         return dets, "noScore", "noIdx"
 
 if __name__ == '__main__':
     if len(sys.argv) == 1:
@@ -133,17 +139,6 @@ if __name__ == '__main__':
     if not ok:
         print('Cannot read video file')
         sys.exit()
-
-
-    #<haar>
-    cascade_path = "haarcascade_frontalface_alt.xml"
-    if not os.path.isfile(cascade_path):
-        print("be sure to get ready for %s" % os.path.basename(cascade_path))
-        sys.exit()
-
-#    cascade = cv2.CascadeClassifier(cascade_path)
-#    rects = cascade.detectMultiScale(frame, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
-
 
 #    detector = HaarCascadeDetector()
     detector = ResnetFaceDetector()
