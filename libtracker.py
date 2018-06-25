@@ -103,6 +103,14 @@ def draw_landmarks(frame, shape):
             cv2.circle(frame, (int(shape_point.x), int(shape_point.y)), 2, (128, 255, 0), -1)
     return frame
 
+class HaarCascadeDetector(object):
+    def __init__(self):
+		self.face_cascade = cv2.CascadeClassifier('haarcascade_frontalface_default.xml')
+
+    def run(self, frame):
+        dets = self.face_cascade.detectMultiScale(frame, 1.1, 5)
+        return dets, "noScore", "noIdx"
+
 if __name__ == '__main__':
     if len(sys.argv) == 1:
         print("""usage:%s [moviefile | uvcID]
@@ -132,8 +140,13 @@ if __name__ == '__main__':
         print("be sure to get ready for %s" % os.path.basename(cascade_path))
         sys.exit()
 
-    cascade = cv2.CascadeClassifier(cascade_path)
-    rects = cascade.detectMultiScale(frame, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
+#    cascade = cv2.CascadeClassifier(cascade_path)
+#    rects = cascade.detectMultiScale(frame, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
+
+
+    detector = HaarCascadeDetector()
+    rects, _, _ = detector.run(frame)
+
     #</haar>
 
     print(rects)
@@ -186,7 +199,9 @@ if __name__ == '__main__':
             t0 = cv2.getTickCount()
 
             #<haar>
-            rects = cascade.detectMultiScale(frame, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
+#            rects = cascade.detectMultiScale(frame, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
+            rects, _, _ = detector.run(frame)
+
             #</haar>
             t1 = cv2.getTickCount()
             usedDetector += (t1-t0)/cv2.getTickFrequency()
