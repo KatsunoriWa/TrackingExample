@@ -33,6 +33,7 @@ class MovieProcessor(object):
             os.mkdir(outDir)
 
         self.outname = os.path.join(outDir, "%s_out.avi" % self.base)
+        self.detectionLogName = os.path.join(outDir, "%s_detect.txt" % self.base)
 
     def processFrame(self, frame):
         return frame
@@ -43,12 +44,17 @@ class MovieProcessor(object):
 
         outname = self.outname
         cap = self.cap
+        
+        self.detectionLog = open(self.detectionLogName, "wt")        
+        
         rec = None
-
+        counter = -1
         while True:
             ret, frame = cap.read()
             if not ret:
                 break
+            
+            counter += 1
 
             cols = frame.shape[1]
             rows = frame.shape[0]
@@ -61,7 +67,7 @@ class MovieProcessor(object):
                                   FRAME_RATE, \
                                   (cols, rows))
 
-            frame = self.processFrame(frame)
+            frame = self.processFrame(frame, counter)
 
             cv.imshow("detections", frame)
             if not rec is None:
@@ -75,3 +81,5 @@ class MovieProcessor(object):
         if not rec is None:
             rec.release()
         cap.release()
+        
+        self.detectionLog.close()

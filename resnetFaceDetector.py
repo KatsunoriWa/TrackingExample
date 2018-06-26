@@ -75,7 +75,7 @@ class ResnetFaceDetector(object):
 
 class ResnetFaceMovieProcessor(MovieProcessor.MovieProcessor):
 
-    def processFrame(self, frame):
+    def processFrame(self, frame, counter):
         dets, confidences, perf_stats = self.detector.run(frame)
         print('Inference time, ms: %.2f' % (perf_stats[0] / cv.getTickFrequency() * 1000))
 
