@@ -6,9 +6,12 @@ from __future__ import print_function
 
 import sys
 import os
+import time
 import cv2
 import dlib
-import librect
+import librect # GX
+from resnetFaceDetector import ResnetFaceDetector # GX
+
 
 class TrackerWithState(object):
     """
@@ -103,18 +106,64 @@ def draw_landmarks(frame, shape):
             cv2.circle(frame, (int(shape_point.x), int(shape_point.y)), 2, (128, 255, 0), -1)
     return frame
 
-if __name__ == '__main__':
-    if len(sys.argv) == 1:
-        print("""usage:%s [moviefile | uvcID]
-        """ % sys.argv[0])
-        print("cv2.__version__", cv2.__version__)
-        sys.exit()
+class HaarCascadeDetector(object):
+    def __init__(self, cascade_path='haarcascade_frontalface_default.xml', scaleFactor=1.1, minNeightbors=5):
+    	 if not os.path.isfile(cascade_path):
+    	     print("be sure to get ready for %s" % os.path.basename(cascade_path))
+         sys.exit()
 
-    try:
-        num = int(sys.argv[1])
-        video = cv2.VideoCapture(num)
-    except:
-        video = cv2.VideoCapture(sys.argv[1])
+         self.face_cascade = cv2.CascadeClassifier(cascade_path)
+         self.scaleFactor = scaleFactor
+         self.minNeightbors = minNeightbors
+
+    def run(self, frame):
+         dets = self.face_cascade.detectMultiScale(frame, self.scaleFactor, self.minNeightbors)
+         return dets, "noScore", "noIdx"
+
+class DlibFrontalDetector(object):
+    def __init__(self, numUpSampling=1):
+        self.detector = dlib.get_frontal_face_detector()
+        self.numUpSampling = numUpSampling
+
+    def run(self, frame):
+        dets = self.detector(frame, self.numUpSampling)
+        rects = librect.dets2rects(dets)
+        return rects, None, None
+
+
+
+
+def getCapAndbase(src):
+    """
+    src: movie file name or cameraID
+    """
+
+    def timeStr():
+        return time.strftime("%Y%m%d_%H%M%S", time.localtime())
+
+    if os.path.isfile(src):
+        base = os.path.splitext(os.path.basename(src))[0]
+        cap = cv2.VideoCapture(src)
+    else:
+        base = "%s" % timeStr()
+        cap = cv2.VideoCapture(int(src))
+
+    return cap, base
+
+def getOutname(base, outDir=""):
+    if not outDir:
+        outname = ""
+        return outname
+
+    if not os.path.isdir(outDir):
+        os.mkdir(outDir)
+
+    outname = os.path.join(outDir, "%s_out.avi" % base)
+    return outname
+
+def main(src):
+
+    video, base = getCapAndbase(src)
 
     if not video.isOpened():
         print("Could not open video")
@@ -125,28 +174,28 @@ if __name__ == '__main__':
         print('Cannot read video file')
         sys.exit()
 
+    detectorType = "resnetSSD"
 
-    #<haar>
-    cascade_path = "haarcascade_frontalface_alt.xml"
-    if not os.path.isfile(cascade_path):
-        print("be sure to get ready for %s" % os.path.basename(cascade_path))
-        sys.exit()
+    if detectorType == "Haar":
+        detector = HaarCascadeDetector()
+    elif detectorType == "dlib":
+        detector = DlibFrontalDetector()
+    elif detectorType == "resnetSSD":
+        confThreshold = 0.5
+        detector = ResnetFaceDetector(confThreshold)
+    else:
+        print("no such detector")
+        exit()
 
-    cascade = cv2.CascadeClassifier(cascade_path)
-    rects = cascade.detectMultiScale(frame, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
-    #</haar>
 
-    print(rects)
+    aviname = getOutname(base, outDir="../track_result")
+    vout = None
+
 
     tracker_types = ['BOOSTING', 'MIL', 'KCF', 'TLD', 'MEDIANFLOW', 'GOTURN']
     tracker_type = tracker_types[4]
 
-    trackers = range(len(rects))
-
-    for i, rect in enumerate(rects):
-        trackers[i] = TrackerWithState(tracker_type)
-        ok = trackers[i].init(frame, tuple(rects[i]))
-
+    trackers = []
     counter = 0
 
     interval = 20
@@ -157,7 +206,19 @@ if __name__ == '__main__':
         if not ok:
             break
 
-        doDetect = (counter % interval == interval - 1)
+        cols = frame.shape[1]
+        rows = frame.shape[0]
+
+        if aviname:
+            if vout is None:
+                FRAME_RATE = 30
+                vout = cv2.VideoWriter(aviname, \
+                              cv2.VideoWriter_fourcc(*'MJPG'), \
+                              FRAME_RATE, \
+                              (cols, rows))
+
+
+        doDetect = (counter % interval == 0)
 
         indexes = range(len(trackers))
         indexes.reverse()
@@ -186,7 +247,9 @@ if __name__ == '__main__':
             t0 = cv2.getTickCount()
 
             #<haar>
-            rects = cascade.detectMultiScale(frame, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
+#            rects = cascade.detectMultiScale(frame, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
+            rects, _, _ = detector.run(frame)
+
             #</haar>
             t1 = cv2.getTickCount()
             usedDetector += (t1-t0)/cv2.getTickFrequency()
@@ -224,6 +287,7 @@ if __name__ == '__main__':
 
         cv2.namedWindow("Tracking q:quit", cv2.WINDOW_NORMAL)
         cv2.imshow("Tracking q:quit", frame)
+        vout.write(frame)
         counter += 1
         k = cv2.waitKey(1) & 0xff
         if k == ord('q') or k == 27:
@@ -231,3 +295,13 @@ if __name__ == '__main__':
 
     cv2.destroyAllWindows()
     video.release()
+    vout.release()
+
+if __name__ == '__main__':
+    if len(sys.argv) == 1:
+        print("""usage:%s [moviefile | uvcID]
+        """ % sys.argv[0])
+        print("cv2.__version__", cv2.__version__)
+        sys.exit()
+
+    main(sys.argv[1])
