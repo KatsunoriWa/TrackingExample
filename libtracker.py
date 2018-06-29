@@ -52,6 +52,14 @@ class TrackerWithState(object):
     def _creatTracker(self, tracker_type):
         u"""
         create Tracker
+    4.0.0 pre case
+    MIL
+    BOOSTING
+    MEDIANFLOW
+    TLD
+    KCF
+    GOTURN
+    MOSSE
         """
         (major_ver, minor_ver, subminor_ver) = (cv2.__version__).split(".")
 
@@ -162,6 +170,8 @@ def getOutname(base, outDir=""):
     return outname
 
 def main(src):
+    import collections
+    import pickle
 
     video, base = getCapAndbase(src)
 
@@ -192,19 +202,30 @@ def main(src):
     vout = None
 
 
+
+
+
     tracker_types = ['BOOSTING', 'MIL', 'KCF', 'TLD', 'MEDIANFLOW', 'GOTURN']
     tracker_type = tracker_types[4]
 
     trackers = []
     counter = 0
 
-    interval = 20
+    interval = 3
+
+    IoUthreshold = 0.5
+
+    timeDict = collections.defaultdict(list)
 
     color = {True:(0, 0, 255), False:(255, 0, 0)}
     while True:
         ok, frame = video.read()
         if not ok:
             break
+        if 0:
+            cols = frame.shape[1]
+            rows = frame.shape[0]
+            frame = cv2.resize(frame, (cols/2, rows/2))
 
         cols = frame.shape[1]
         rows = frame.shape[0]
@@ -242,6 +263,8 @@ def main(src):
                 del trackers[i]
                 print("""del trackers["%d"] """ % i)
 
+        timeDict[len(indexes)].append(usedTracker)
+
         if doDetect:
             usedDetector = 0
             t0 = cv2.getTickCount()
@@ -262,12 +285,12 @@ def main(src):
             alreadyFounds, asTrack = librect.getBestIoU(rects, states)
 
             for j, rect in enumerate(rects):# 検出について
-                if alreadyFounds[j] > 0.5:
+                if alreadyFounds[j] > IoUthreshold:
                     print(librect.rect2bbox(rect), "# rect2bbox(rect)")
                     ok = trackers[asTrack[j]].init(frame, librect.rect2bbox(rect))
                     left, top, w, h = rect
                     right, bottom = left+w, top+h
-                elif alreadyFounds[j] < 0.5 - 0.1:
+                elif alreadyFounds[j] < IoUthreshold - 0.1:
                     tracker = TrackerWithState(tracker_type)
                     ok = tracker.init(frame, librect.rect2bbox(rects[j]))
                     trackers.append(tracker)
@@ -296,6 +319,11 @@ def main(src):
     cv2.destroyAllWindows()
     video.release()
     vout.release()
+
+    print(timeDict)
+
+    with open('timeDict_%s_%d_%d.pickle' % (tracker_type, frame.shape[1], frame.shape[0])  , 'wb') as f:
+        pickle.dump(timeDict, f)
 
 if __name__ == '__main__':
     if len(sys.argv) == 1:
