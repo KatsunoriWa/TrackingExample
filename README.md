@@ -38,10 +38,10 @@ shape_predictor_68_face_landmarks.dat
 
 ## usage:
 libtracker.py
-
+```
 $ python libtracker.py
 usage:libtracker.py [moviefile | uvcID]
-
+```
 cv2.__version__ 4.0.0-pre
 $
 
